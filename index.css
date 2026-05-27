@@ -1,10 +1,16 @@
 :root {
-    --primary-blue: #0f4c81;
-    --header-bg: #1f618d;
-    --table-header: #85c1e9;
-    --table-border: #5dade2;
-    --row-alt: #ebf5fb;
-    --bg-color: #f7f9f9;
+    /* Paleta de colores Dark Mode */
+    --primary-blue: #e45151;
+    --header-bg: #1e718a;
+    --table-header: #374151;
+    --table-border: #4b5563;
+    --row-alt: #1f2937;
+    --bg-color: #111827;       /* Fondo general muy oscuro */
+    --card-bg: #1f2937;        /* Fondo de los contenedores */
+    --text-main: #f3f4f6;      /* Texto principal claro */
+    --text-muted: #9ca3af;     /* Texto secundario gris */
+    --input-bg: #374151;       /* Cajas de texto oscuras */
+    --input-border: #4b5563;
 }
 
 body { 
@@ -12,14 +18,14 @@ body {
     background-color: var(--bg-color); 
     margin: 0;
     padding: 40px 20px;
-    color: #333;
+    color: var(--text-main);
 }
 
 .container { 
-    background: #fff; 
+    background: var(--card-bg); 
     padding: 30px; 
     border-radius: 8px; 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra más pronunciada para modo oscuro */
     max-width: 1100px; 
     margin: auto; 
 }
@@ -43,8 +49,8 @@ body {
 }
 
 .card-btn {
-    background-color: white;
-    border: 2px solid #bdc3c7;
+    background-color: var(--input-bg);
+    border: 2px solid var(--input-border);
     border-radius: 8px;
     padding: 30px;
     width: 200px;
@@ -55,36 +61,52 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 15px;
+    color: var(--text-main);
 }
 
 .card-btn:hover {
-    border-color: #3498db;
-    box-shadow: 0 8px 15px rgba(52, 152, 219, 0.2);
+    border-color: var(--primary-blue);
+    box-shadow: 0 8px 15px rgba(59, 130, 246, 0.2);
     transform: translateY(-5px);
+    background-color: #4b5563;
 }
 
 .card-icon { font-size: 40px; }
-.card-title { font-weight: 600; color: #2c3e50; font-size: 18px; }
+.card-title { font-weight: 600; font-size: 18px; }
 
 /* --- Formulario de Ingreso --- */
 .form-container {
     max-width: 500px;
     margin: 0 auto;
-    background-color: #f8f9f9;
+    background-color: var(--bg-color);
     padding: 25px;
     border-radius: 8px;
-    border: 1px solid #d5d8dc;
+    border: 1px solid var(--table-border);
 }
 
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: #34495e; font-size: 14px;}
+.form-group label { display: block; font-weight: 600; margin-bottom: 5px; color: var(--text-main); font-size: 14px;}
 .form-group input, .form-group select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #bdc3c7;
+    border: 1px solid var(--input-border);
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 14px;
+    background-color: var(--input-bg);
+    color: var(--text-main);
+}
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--primary-blue);
+    outline: none;
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+}
+
+/* Ocultar las flechas de los inputs numéricos para un diseño más limpio */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
 }
 
 /* --- Botones Generales --- */
@@ -96,39 +118,47 @@ body {
     cursor: pointer;
     font-weight: 600;
     transition: background 0.2s;
+    color: white;
 }
-.btn-primary { background-color: #27ae60; color: white; }
-.btn-primary:hover { background-color: #219150; }
-.btn-secondary { background-color: #95a5a6; color: white; }
-.btn-secondary:hover { background-color: #7f8c8d; }
+.btn-primary { background-color: #10b981; } /* Verde esmeralda */
+.btn-primary:hover { background-color: #059669; }
+.btn-secondary { background-color: #4b5563; } /* Gris */
+.btn-secondary:hover { background-color: #374151; }
 
 /* --- Tabla de Vista --- */
 .header-title { 
-    background: linear-gradient(to right, #1a5276, #2980b9); 
-    color: white; 
+    background: linear-gradient(to right, #cbd475, #d6c529); /* Degradado azul oscuro */
+    color: rgb(8, 8, 8); 
     padding: 20px; 
     text-align: center; 
     border-radius: 6px; 
     position: relative;
 }
 .red-tab { 
-    position: absolute; top: 0; right: 15%; width: 45px; height: 12px; background-color: #e74c3c; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px;
+    position: absolute; top: 0; right: 15%; width: 45px; height: 12px; background-color: #ef4444; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px;
 }
 h2 { margin: 0; font-size: 24px; font-weight: 500; }
 h3 { margin: 8px 0 0 0; font-size: 16px; font-weight: 300; opacity: 0.9; }
 
-.meta-info { display: flex; justify-content: space-between; margin: 25px 5%; font-size: 14px; color: #444; }
+.meta-info { display: flex; justify-content: space-between; margin: 25px 5%; font-size: 14px; color: var(--text-muted); }
 .meta-info div { display: flex; flex-direction: column; gap: 8px; }
+.meta-info strong { color: var(--text-main); } /* Resalta los títulos como 'Artículo' o 'Clave' */
 
-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: var(--text-main); }
 th, td { border: 1px solid var(--table-border); text-align: right; padding: 8px; vertical-align: middle; }
-th { background-color: var(--table-header); color: #154360; text-align: center; font-weight: 600; padding: 10px;}
-td:nth-child(1), td:nth-child(2) { text-align: left; } /* Fecha y Concepto */
+th { background-color: var(--table-header); color: #e5e7eb; text-align: center; font-weight: 600; padding: 10px;}
+td:nth-child(1), td:nth-child(2) { text-align: left; }
 
 tbody tr:nth-child(even) { background-color: var(--row-alt); }
-tbody tr:hover { background-color: #e8f8f5; }
+tbody tr:hover { background-color: #374151; }
 
 #inventarioFinal {
-    margin-top: 25px; font-size: 14px; color: #1a5276; padding: 15px;
-    background-color: #eaf2f8; border-left: 4px solid #2980b9; border-radius: 4px; display: none;
+    margin-top: 25px; 
+    font-size: 14px; 
+    color: #bfdbfe; /* Azul claro para el texto de resumen */
+    padding: 15px;
+    background-color: rgba(29, 78, 216, 0.2); /* Fondo azul semitransparente */
+    border-left: 4px solid var(--primary-blue); 
+    border-radius: 4px; 
+    display: none;
 }
