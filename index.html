@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Kardex - Costos Promedio</title>
+    <link rel="stylesheet" href="estilos.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+
+</head>
+<body>
+    <div class="container">
+        
+        <div id="pantalla-menu" class="pantalla activa">
+            <div class="header-title">
+                <h2>Sistema Kardex Financiero</h2>
+                <h3>Método de Valuación: Costos Promedio</h3>
+            </div>
+            
+            <div class="menu-grid">
+                <div class="card-btn" onclick="cambiarPantalla('pantalla-formulario')">
+                    <div class="card-icon">📝</div>
+                    <div class="card-title">Rellenar Inventario</div>
+                </div>
+                <div class="card-btn" onclick="irAVista()">
+                    <div class="card-icon">📊</div>
+                    <div class="card-title">Vista de Tabla</div>
+                </div>
+                <div class="card-btn" onclick="descargarExcel()">
+                    <div class="card-icon">📥</div>
+                    <div class="card-title">Descargar Excel</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pantalla-formulario" class="pantalla">
+            <div class="header-title" style="margin-bottom: 20px;">
+                <h2>Registrar Movimiento</h2>
+            </div>
+            
+            <div class="form-container">
+                <form id="formKardex" onsubmit="guardarRegistro(event)">
+                    <div class="form-group">
+                        <label>Fecha:</label>
+                        <input type="text" id="inFecha" placeholder="Ej. 01-May" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Concepto:</label>
+                        <input type="text" id="inConcepto" placeholder="Ej. Inventario Inicial, Compra, Consumo..." required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tipo de Movimiento:</label>
+                        <select id="inTipo" onchange="toggleCostoUnitario()" required>
+                            <option value="entrada">Entrada (Compra / Inv. Inicial)</option>
+                            <option value="salida">Salida (Consumo / Venta)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Cantidad (Unidades):</label>
+                        <input type="number" id="inCantidad" step="1" min="1" required>
+                    </div>
+                    
+                    <div class="form-group" id="grupoUnitario">
+                        <label>Costo Unitario ($):</label>
+                        <input type="number" id="inUnitario" step="0.01" min="0">
+                        <small style="color:#7f8c8d; font-size:12px; display:block; margin-top:4px;">
+                            *En las Salidas, el costo se calcula en automático.
+                        </small>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">Volver al Menú</button>
+                        <button type="submit" class="btn btn-primary">Guardar Registro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="pantalla-vista" class="pantalla">
+            <div class="btn-group" style="margin-bottom: 20px;">
+                <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver al Menú</button>
+                <button class="btn btn-primary" onclick="descargarExcel()">📥 Descargar Excel</button>
+            </div>
+
+            <div class="header-title" id="encabezadoImprimir">
+                <div class="red-tab"></div>
+                <h2>Costos promedio</h2>
+                <h3>Auxiliar de Almacén de Materias Primas</h3>
+            </div>
+
+            <div class="meta-info">
+                <div>
+                    <span><strong>Artículo:</strong> X</span>
+                    <span><strong>Localización:</strong> </span>
+                </div>
+                <div>
+                    <span><strong>Clave:</strong> 100 000</span>
+                    <span><strong>Límite mínimo:</strong> </span>
+                </div>
+                <div>
+                    <span><strong>Unidad:</strong> Pieza</span>
+                    <span><strong>Límite máximo:</strong> </span>
+                </div>
+            </div>
+
+            <div id="areaTablaExcell">
+                <table id="kardexTable">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 9%;">Fecha</th>
+                            <th rowspan="2" style="width: 20%;">Concepto</th>
+                            <th colspan="3">Unidades</th>
+                            <th colspan="2">Costo</th>
+                            <th colspan="3">Valores</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 7%;">Entrada</th>
+                            <th style="width: 7%;">Salida</th>
+                            <th style="width: 8%;">Existencia</th>
+                            <th style="width: 8%;">Unitario</th>
+                            <th style="width: 8%;">Promedio</th>
+                            <th style="width: 10%;">Debe</th>
+                            <th style="width: 10%;">Haber</th>
+                            <th style="width: 10%;">Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kardexBody">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="inventarioFinal"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Base de datos temporal en memoria
+        let registros = [];
+
+        // 2. Control de navegación entre pantallas
+        function cambiarPantalla(idPantalla) {
+            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+            document.getElementById(idPantalla).classList.add('activa');
+        }
+
+        function irAVista() {
+            calcularYRenderizarKardex();
+            cambiarPantalla('pantalla-vista');
+        }
+
+        // 3. Lógica del formulario
+        function toggleCostoUnitario() {
+            const tipo = document.getElementById('inTipo').value;
+            const campoUnitario = document.getElementById('inUnitario');
+            
+            if (tipo === 'salida') {
+                campoUnitario.value = '';
+                campoUnitario.disabled = true;
+                campoUnitario.required = false;
+            } else {
+                campoUnitario.disabled = false;
+                campoUnitario.required = true;
+            }
+        }
+
+        function guardarRegistro(e) {
+            e.preventDefault(); // Evita que la página se recargue
+
+            const tipo = document.getElementById('inTipo').value;
+            const nuevoRegistro = {
+                fecha: document.getElementById('inFecha').value,
+                concepto: document.getElementById('inConcepto').value,
+                entrada: tipo === 'entrada' ? parseFloat(document.getElementById('inCantidad').value) : 0,
+                salida: tipo === 'salida' ? parseFloat(document.getElementById('inCantidad').value) : 0,
+                unitario: tipo === 'entrada' ? parseFloat(document.getElementById('inUnitario').value) : null
+            };
+
+            registros.push(nuevoRegistro);
+            document.getElementById('formKardex').reset();
+            toggleCostoUnitario(); // Resetear el estado del input
+            
+            alert("Movimiento guardado con éxito.");
+        }
+
+        // 4. Lógica contable de Kardex (Motor de cálculo)
+        const formatMoney = (num) => (num || num === 0) ? num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+        const formatUnits = (num) => (num || num === 0) ? num : "";
+
+        function calcularYRenderizarKardex() {
+            const tbody = document.getElementById('kardexBody');
+            tbody.innerHTML = ''; // Limpiar tabla actual
+
+            let existencia = 0;
+            let saldo = 0;
+            let promedio = 0;
+
+            if(registros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px;">No hay movimientos registrados. Ve a "Rellenar Inventario" para comenzar.</td></tr>';
+                document.getElementById('inventarioFinal').style.display = "none";
+                return;
+            }
+
+            registros.forEach(reg => {
+                let debe = 0;
+                let haber = 0;
+
+                if (reg.entrada > 0) {
+                    existencia += reg.entrada;
+                    debe = reg.entrada * reg.unitario;
+                    saldo += debe;
+                    promedio = saldo / existencia; // Se recalcula el promedio
+                } else if (reg.salida > 0) {
+                    existencia -= reg.salida;
+                    haber = reg.salida * promedio; // Se toma el costo promedio actual
+                    saldo -= haber;
+                }
+
+                // Generar fila HTML en modo solo lectura
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center;">${reg.fecha}</td>
+                    <td>${reg.concepto}</td>
+                    <td>${reg.entrada > 0 ? reg.entrada : ''}</td>
+                    <td>${reg.salida > 0 ? reg.salida : ''}</td>
+                    <td><strong>${formatUnits(existencia)}</strong></td>
+                    <td>${reg.unitario ? formatMoney(reg.unitario) : ''}</td>
+                    <td>${formatMoney(promedio)}</td>
+                    <td>${debe > 0 ? formatMoney(debe) : ''}</td>
+                    <td>${haber > 0 ? formatMoney(haber) : ''}</td>
+                    <td><strong>${formatMoney(saldo)}</strong></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Actualizar cuadro resumen
+            const resDiv = document.getElementById('inventarioFinal');
+            resDiv.style.display = "block";
+            resDiv.innerHTML = `<strong>El inventario final queda valuado de la siguiente manera:</strong><br>
+                                ${existencia} unidades a $${promedio.toFixed(2)} por unidad = $${saldo.toFixed(2)} pesos`;
+        }
+
+        // 5. Lógica de descarga Excel (.xlsx nativo)
+        async function descargarExcel() {
+            calcularYRenderizarKardex();
+            
+            if(registros.length === 0) {
+                alert("No hay datos para exportar. Registra movimientos primero.");
+                return;
+            }
+
+            // Crear el libro de Excel y la hoja
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Kardex Promedio');
+
+            // 1. Título General
+            worksheet.mergeCells('A1:J1');
+            const titulo = worksheet.getCell('A1');
+            titulo.value = 'Costos promedio - Auxiliar de Almacén de Materias Primas';
+            titulo.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+            titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F618D' } }; // Azul oscuro
+            titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+
+            worksheet.addRow([]); // Fila 2 en blanco para dar espacio
+
+            // 2. Estructurar los Encabezados (Celdas combinadas)
+            const rowEncabezado1 = worksheet.addRow(['Fecha', 'Concepto', 'Unidades', '', '', 'Costo', '', 'Valores', '', '']);
+            worksheet.mergeCells('C3:E3'); // Combinar Unidades
+            worksheet.mergeCells('F3:G3'); // Combinar Costo
+            worksheet.mergeCells('H3:J3'); // Combinar Valores
+
+            const rowEncabezado2 = worksheet.addRow(['', '', 'Entrada', 'Salida', 'Existencia', 'Unitario', 'Promedio', 'Debe', 'Haber', 'Saldo']);
+            worksheet.mergeCells('A3:A4'); // Combinar Fecha (Vertical)
+            worksheet.mergeCells('B3:B4'); // Combinar Concepto (Vertical)
+
+            // Dar estilo a los encabezados
+            [rowEncabezado1, rowEncabezado2].forEach(row => {
+                row.eachCell(cell => {
+                    cell.font = { bold: true, color: { argb: 'FF154360' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF85C1E9' } }; // Azul claro
+                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                    cell.border = {
+                        top: {style:'thin'}, left: {style:'thin'}, 
+                        bottom: {style:'thin'}, right: {style:'thin'}
+                    };
+                });
+            });
+
+            // 3. Inyectar y calcular los datos del Kardex
+            let existencia = 0, saldo = 0, promedio = 0;
+            
+            registros.forEach(reg => {
+                let debe = 0, haber = 0;
+                
+                if (reg.entrada > 0) {
+                    existencia += reg.entrada;
+                    debe = reg.entrada * reg.unitario;
+                    saldo += debe;
+                    promedio = saldo / existencia;
+                } else if (reg.salida > 0) {
+                    existencia -= reg.salida;
+                    haber = reg.salida * promedio;
+                    saldo -= haber;
+                }
+
+                const row = worksheet.addRow([
+                    reg.fecha,
+                    reg.concepto,
+                    reg.entrada > 0 ? reg.entrada : '',
+                    reg.salida > 0 ? reg.salida : '',
+                    existencia,
+                    reg.unitario || '',
+                    promedio,
+                    debe > 0 ? debe : '',
+                    haber > 0 ? haber : '',
+                    saldo
+                ]);
+
+                // Aplicar bordes a las celdas de datos
+                row.eachCell((cell, colNumber) => {
+                    cell.border = {
+                        top: {style:'thin'}, left: {style:'thin'}, 
+                        bottom: {style:'thin'}, right: {style:'thin'}
+                    };
+                    
+                    // Alinear números a la derecha
+                    if(colNumber > 2) cell.alignment = { horizontal: 'right' };
+                });
+
+                // Aplicar formato de MONEDA NATIVO en Excel a las columnas F, G, H, I, J
+                ['F', 'G', 'H', 'I', 'J'].forEach(col => {
+                    row.getCell(col).numFmt = '"$"#,##0.00';
+                });
+            });
+
+            // 4. Ajustar el ancho de las columnas
+            worksheet.columns.forEach((col, i) => {
+                if (i === 1) col.width = 25; // Columna B (Concepto) más ancha
+                else if (i === 0) col.width = 12; // Columna A (Fecha)
+                else col.width = 13; // Resto de columnas
+            });
+
+            // 5. Empaquetar y descargar el archivo final
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, 'Kardex_Costos_Promedio.xlsx');
+        }
+    </script>
+</body>
+</html>
