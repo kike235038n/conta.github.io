@@ -1,5 +1,4 @@
 :root {
-    /* Paleta de colores Dark Mode */
     --primary-blue: #e45151;
     --header-bg: #1e718a;
     --table-header: #374151;
@@ -161,4 +160,20 @@ tbody tr:hover { background-color: #374151; }
     border-left: 4px solid var(--primary-blue); 
     border-radius: 4px; 
     display: none;
+}
+
+/* --- Botón Eliminar --- */
+.btn-delete {
+    background: transparent;
+    border: none;
+    color: #ef4444; /* Rojo suave */
+    cursor: pointer;
+    font-size: 16px;
+    transition: transform 0.2s, color 0.2s;
+    padding: 4px;
+}
+
+.btn-delete:hover {
+    transform: scale(1.2);
+    color: #b91c1c; /* Rojo intenso */
 }
