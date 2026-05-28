@@ -8,14 +8,16 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
     <div class="container">
         
         <div id="pantalla-menu" class="pantalla activa">
             <div class="header-title">
-                <h2>Sistema de almacenamiento</h2>
-                <h3>Proyecto contabilidad</h3>
+                <h2>Sistema de inventario (Tabla)</h2>
+                <h3>Proyecto de unidad contabilidad financiera</h3>
             </div>
             
             <div class="menu-grid">
@@ -88,22 +90,21 @@
 
             <div class="header-title" id="encabezadoImprimir">
                 <div class="red-tab"></div>
-                <h2>Registro</h2></h2>
-                <h3>Rellene los campos solicitados</h3>
+                <h2>Sistema de almacenamiento</h2>
+                <h3>Rellene los siguientes datos</h3>
             </div>
 
             <div class="meta-info">
                 <div>
-                    <span><strong>Artículo:</strong> X</span>
-                    <span><strong>Localización:</strong> </span>
+                    <span><strong>Artículo:</strong> Producto X</span>
+                    <span><strong>Localización:</strong> Almacén General</span>
                 </div>
                 <div>
-                    <span><strong>Clave:</strong> 100 000</span>
-                    <span><strong>Límite mínimo:</strong> </span>
-                </div>
-                <div>
+                    <span><strong>Clave:</strong> 100000</span>
                     <span><strong>Unidad:</strong> Pieza</span>
-                    <span><strong>Límite máximo:</strong> </span>
+                </div>
+                <div class="barcode-container">
+                    <svg id="barcode"></svg>
                 </div>
             </div>
 
@@ -139,10 +140,8 @@
     </div>
 
     <script>
-        // 1. Base de datos temporal en memoria
         let registros = [];
 
-        // 2. Control de navegación entre pantallas
         function cambiarPantalla(idPantalla) {
             document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
             document.getElementById(idPantalla).classList.add('activa');
@@ -153,7 +152,6 @@
             cambiarPantalla('pantalla-vista');
         }
 
-        // 3. Lógica del formulario
         function toggleCostoUnitario() {
             const tipo = document.getElementById('inTipo').value;
             const campoUnitario = document.getElementById('inUnitario');
@@ -187,16 +185,13 @@
             alert("Movimiento guardado con éxito.");
         }
 
-        // --- NUEVO: FUNCIÓN PARA ELIMINAR FILA ---
         function eliminarRegistro(index) {
-            // Confirmación de seguridad antes de borrar
             if(confirm("¿Estás seguro de que deseas eliminar este movimiento? Los saldos y promedios posteriores se recalcularán automáticamente.")) {
-                registros.splice(index, 1); // Borra el elemento del array
-                calcularYRenderizarKardex(); // Vuelve a dibujar toda la tabla
+                registros.splice(index, 1); 
+                calcularYRenderizarKardex(); 
             }
         }
 
-        // 4. Lógica contable de Kardex (Motor de cálculo)
         const formatMoney = (num) => (num || num === 0) ? num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
         const formatUnits = (num) => (num || num === 0) ? num : "";
 
@@ -229,7 +224,6 @@
                     saldo -= haber;
                 }
 
-                // Generar fila HTML incluyendo el botón de eliminar
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td style="text-align:center;">${reg.fecha}</td>
@@ -255,7 +249,6 @@
                                 ${existencia} unidades a $${promedio.toFixed(2)} por unidad = $${saldo.toFixed(2)} pesos`;
         }
 
-        // 5. Lógica de descarga Excel (.xlsx con Formato y Estilos)
         async function descargarExcel() {
             calcularYRenderizarKardex();
             
@@ -275,15 +268,23 @@
             titulo.alignment = { horizontal: 'center', vertical: 'middle' };
 
             worksheet.addRow([]); 
+            
+            // Fila extra para mostrar la clave del producto en el Excel
+            worksheet.mergeCells('A3:J3');
+            const subtitulo = worksheet.getCell('A3');
+            subtitulo.value = 'Artículo: Producto X | Clave: 100000 | Unidad: Pieza';
+            subtitulo.font = { bold: true };
+            subtitulo.alignment = { horizontal: 'left' };
+            worksheet.addRow([]);
 
             const rowEncabezado1 = worksheet.addRow(['Fecha', 'Concepto', 'Unidades', '', '', 'Costo', '', 'Valores', '', '']);
-            worksheet.mergeCells('C3:E3'); 
-            worksheet.mergeCells('F3:G3'); 
-            worksheet.mergeCells('H3:J3'); 
+            worksheet.mergeCells('C5:E5'); 
+            worksheet.mergeCells('F5:G5'); 
+            worksheet.mergeCells('H5:J5'); 
 
             const rowEncabezado2 = worksheet.addRow(['', '', 'Entrada', 'Salida', 'Existencia', 'Unitario', 'Promedio', 'Debe', 'Haber', 'Saldo']);
-            worksheet.mergeCells('A3:A4'); 
-            worksheet.mergeCells('B3:B4'); 
+            worksheet.mergeCells('A5:A6'); 
+            worksheet.mergeCells('B5:B6'); 
 
             [rowEncabezado1, rowEncabezado2].forEach(row => {
                 row.eachCell(cell => {
@@ -350,7 +351,23 @@
             saveAs(blob, 'Kardex_Costos_Promedio.xlsx');
         }
 
-        window.onload = toggleCostoUnitario;
+        function generarCodigoBarras() {
+            JsBarcode("#barcode", "100000", {
+                format: "CODE128",     
+                lineColor: "#000000",  // color
+                width: 2,
+                height: 40,            // Altura de las barras
+                displayValue: true,   
+                fontSize: 14,
+                margin: 0,
+                background: "transparent"
+            });
+        }
+
+        window.onload = () => {
+            toggleCostoUnitario();
+            generarCodigoBarras();
+        };
     </script>
 </body>
 </html>
