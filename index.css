@@ -4,11 +4,11 @@
     --table-header: #374151;
     --table-border: #4b5563;
     --row-alt: #1f2937;
-    --bg-color: #111827;       /* Fondo general muy oscuro */
-    --card-bg: #1f2937;        /* Fondo de los contenedores */
-    --text-main: #f3f4f6;      /* Texto principal claro */
-    --text-muted: #9ca3af;     /* Texto secundario gris */
-    --input-bg: #374151;       /* Cajas de texto oscuras */
+    --bg-color: #111827;       
+    --card-bg: #1f2937;        
+    --text-main: #f3f4f6;      
+    --text-muted: #9ca3af;     
+    --input-bg: #374151;       
     --input-border: #4b5563;
 }
 
@@ -24,12 +24,12 @@ body {
     background: var(--card-bg); 
     padding: 30px; 
     border-radius: 8px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Sombra más pronunciada para modo oscuro */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     max-width: 1100px; 
     margin: auto; 
 }
 
-/* --- Control de Pantallas --- */
+
 .pantalla { display: none; }
 .pantalla.activa { display: block; animation: fadeIn 0.4s ease-in-out; }
 
@@ -38,7 +38,6 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Pantalla de Menú Principal --- */
 .menu-grid {
     display: flex;
     justify-content: center;
@@ -73,7 +72,6 @@ body {
 .card-icon { font-size: 40px; }
 .card-title { font-weight: 600; font-size: 18px; }
 
-/* --- Formulario de Ingreso --- */
 .form-container {
     max-width: 500px;
     margin: 0 auto;
@@ -101,14 +99,12 @@ body {
     box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
 }
 
-/* Ocultar las flechas de los inputs numéricos para un diseño más limpio */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 
     -webkit-appearance: none; 
     margin: 0; 
 }
 
-/* --- Botones Generales --- */
 .btn-group { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 .btn {
     padding: 10px 20px;
@@ -119,14 +115,13 @@ input[type=number]::-webkit-outer-spin-button {
     transition: background 0.2s;
     color: white;
 }
-.btn-primary { background-color: #10b981; } /* Verde esmeralda */
+.btn-primary { background-color: #10b981; } 
 .btn-primary:hover { background-color: #059669; }
-.btn-secondary { background-color: #4b5563; } /* Gris */
+.btn-secondary { background-color: #4b5563; } 
 .btn-secondary:hover { background-color: #374151; }
 
-/* --- Tabla de Vista --- */
 .header-title { 
-    background: linear-gradient(to right, #cbd475, #d6c529); /* Degradado azul oscuro */
+    background: linear-gradient(to right, #cbd475, #d6c529); 
     color: rgb(8, 8, 8); 
     padding: 20px; 
     text-align: center; 
@@ -141,7 +136,7 @@ h3 { margin: 8px 0 0 0; font-size: 16px; font-weight: 300; opacity: 0.9; }
 
 .meta-info { display: flex; justify-content: space-between; margin: 25px 5%; font-size: 14px; color: var(--text-muted); }
 .meta-info div { display: flex; flex-direction: column; gap: 8px; }
-.meta-info strong { color: var(--text-main); } /* Resalta los títulos como 'Artículo' o 'Clave' */
+.meta-info strong { color: var(--text-main); } 
 
 table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; color: var(--text-main); }
 th, td { border: 1px solid var(--table-border); text-align: right; padding: 8px; vertical-align: middle; }
@@ -154,19 +149,18 @@ tbody tr:hover { background-color: #374151; }
 #inventarioFinal {
     margin-top: 25px; 
     font-size: 14px; 
-    color: #bfdbfe; /* Azul claro para el texto de resumen */
+    color: #bfdbfe; 
     padding: 15px;
-    background-color: rgba(29, 78, 216, 0.2); /* Fondo azul semitransparente */
+    background-color: rgba(29, 78, 216, 0.2); 
     border-left: 4px solid var(--primary-blue); 
     border-radius: 4px; 
     display: none;
 }
 
-/* --- Botón Eliminar --- */
 .btn-delete {
     background: transparent;
     border: none;
-    color: #ef4444; /* Rojo suave */
+    color: #ef4444; 
     cursor: pointer;
     font-size: 16px;
     transition: transform 0.2s, color 0.2s;
@@ -175,5 +169,20 @@ tbody tr:hover { background-color: #374151; }
 
 .btn-delete:hover {
     transform: scale(1.2);
-    color: #b91c1c; /* Rojo intenso */
+    color: #b91c1c; 
+}
+
+/* Código de Barras */
+.barcode-container {
+    background-color: #ffffff; 
+    padding: 10px 20px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.meta-info {
+    align-items: center;
 }
