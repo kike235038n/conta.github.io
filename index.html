@@ -8,11 +8,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
 <div class="container">
 
+    <!-- PANTALLA MENÚ -->
     <div id="pantalla-menu" class="pantalla activa">
         <div class="header-title">
             <h2>Sistema de Inventario General</h2>
@@ -27,6 +31,14 @@
                 <div class="card-icon">📊</div>
                 <div class="card-title">Ver Tabla</div>
             </div>
+            <div class="card-btn" onclick="mostrarQR()">
+                <div class="card-icon">📲</div>
+                <div class="card-title">Descargar QR</div>
+            </div>
+            <div class="card-btn" onclick="cambiarPantalla('pantalla-scanner')">
+                <div class="card-icon">🔍</div>
+                <div class="card-title">Cargar por QR</div>
+            </div>
             <div class="card-btn" onclick="descargarExcel()">
                 <div class="card-icon">📥</div>
                 <div class="card-title">Descargar Excel</div>
@@ -39,6 +51,7 @@
         </div>
     </div>
 
+    <!-- PANTALLA FORMULARIO -->
     <div id="pantalla-formulario" class="pantalla">
         <div class="header-title">
             <h2>Registrar Movimiento de Producto</h2>
@@ -61,12 +74,12 @@
                     <label>Producto:</label>
                     <input type="text" id="inProducto" placeholder="Ej. SSD SU630 240 GB SATA III" required>
                 </div>
-                <div style="display: flex; gap: 15px;">
-                    <div class="form-group" style="flex: 1;">
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group" style="flex:1;">
                         <label>Entrada (Unidades):</label>
                         <input type="number" id="inEntrada" min="0" value="0" required>
                     </div>
-                    <div class="form-group" style="flex: 1;">
+                    <div class="form-group" style="flex:1;">
                         <label>Salida (Unidades):</label>
                         <input type="number" id="inSalida" min="0" value="0" required>
                     </div>
@@ -83,9 +96,11 @@
         </div>
     </div>
 
+    <!-- PANTALLA TABLA -->
     <div id="pantalla-vista" class="pantalla">
         <div class="btn-group" style="margin-bottom:20px;">
             <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver</button>
+            <button class="btn btn-primary" onclick="mostrarQR()">📲 Generar QR</button>
             <button class="btn btn-primary" onclick="descargarExcel()">📥 Descargar Excel</button>
         </div>
         <div style="overflow-x:auto;">
@@ -102,14 +117,9 @@
                         <th rowspan="2">Acción</th>
                     </tr>
                     <tr>
-                        <th>Entrada</th>
-                        <th>Salida</th>
-                        <th>Existencia</th>
-                        <th>Unitario</th>
-                        <th>Promedio</th>
-                        <th>Debe</th>
-                        <th>Haber</th>
-                        <th>Saldo</th>
+                        <th>Entrada</th><th>Salida</th><th>Existencia</th>
+                        <th>Unitario</th><th>Promedio</th>
+                        <th>Debe</th><th>Haber</th><th>Saldo</th>
                     </tr>
                 </thead>
                 <tbody id="kardexBody"></tbody>
@@ -117,20 +127,226 @@
         </div>
     </div>
 
+    <!-- PANTALLA QR -->
+    <div id="pantalla-qr" class="pantalla">
+        <div class="header-title">
+            <h2>Código QR de la Tabla</h2>
+        </div>
+        <div style="text-align:center; padding: 20px;">
+            <p style="color:#aaa; margin-bottom:20px;">Escanea este QR para cargar los datos en cualquier dispositivo</p>
+            <div id="qrcode" style="display:inline-block; background:#fff; padding:16px; border-radius:12px;"></div>
+            <br><br>
+            <p id="qr-info" style="color:#aaa; font-size:13px;"></p>
+            <br>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver</button>
+                <button class="btn btn-primary" onclick="descargarQRImagen()">💾 Guardar QR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA SCANNER -->
+    <div id="pantalla-scanner" class="pantalla">
+        <div class="header-title">
+            <h2>Escanear Código QR</h2>
+        </div>
+        <div style="text-align:center; padding:20px;">
+            <p style="color:#aaa; margin-bottom:20px;">Apunta la cámara al código QR del inventario</p>
+            <div id="scanner-container" style="max-width:400px; margin:0 auto; border-radius:12px; overflow:hidden;"></div>
+            <br>
+            <p id="scanner-status" style="color:#aaa; font-size:13px;">Iniciando cámara...</p>
+            <br>
+            <button class="btn btn-secondary" onclick="detenerScanner()">⬅ Volver</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    let registros = [];
+    let registros  = [];
     let idRegistro = 1;
+    let scannerActivo = null;
 
+    const BASE_URL = "https://kike235038n.github.io/conta.github.io/";
+
+    // ── Al cargar la página, revisar si hay datos en la URL ──
+    window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        const datos  = params.get('d');
+        if (datos) {
+            try {
+                const json      = pako.inflate(Uint8Array.from(atob(datos), c => c.charCodeAt(0)), { to: 'string' });
+                const importado = JSON.parse(json);
+                if (Array.isArray(importado) && importado.length > 0) {
+                    registros  = importado;
+                    idRegistro = Math.max(...registros.map(r => r.id || 0)) + 1;
+                    calcularYRenderizarKardex();
+                    cambiarPantalla('pantalla-vista');
+                    alert(`✅ Datos cargados desde QR: ${registros.length} movimientos.`);
+                    // Limpiar URL para no recargar al refrescar
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
+            } catch(e) {
+                console.warn("No se pudo leer datos del QR en URL:", e);
+            }
+        }
+    });
+
+    // ── Comprimir datos y generar URL con QR ──
+    function generarURLConDatos() {
+        const json       = JSON.stringify(registros);
+        const compressed = pako.deflate(json);
+        const b64        = btoa(String.fromCharCode(...compressed));
+        return BASE_URL + "?d=" + encodeURIComponent(b64);
+    }
+
+    function mostrarQR() {
+        if (registros.length === 0) {
+            alert("No hay datos en la tabla para generar el QR.");
+            return;
+        }
+
+        const url = generarURLConDatos();
+        console.log("URL generada:", url.length, "caracteres");
+
+        if (url.length > 2953) {
+            alert(`⚠️ Hay demasiados datos para un QR (${registros.length} registros, ${url.length} caracteres).\nEl QR soporta hasta ~2900 caracteres. Intenta con menos registros.`);
+            return;
+        }
+
+        cambiarPantalla('pantalla-qr');
+
+        // Limpiar QR anterior
+        document.getElementById('qrcode').innerHTML = '';
+
+        new QRCode(document.getElementById('qrcode'), {
+            text:          url,
+            width:         256,
+            height:        256,
+            colorDark:     "#000000",
+            colorLight:    "#ffffff",
+            correctLevel:  QRCode.CorrectLevel.M
+        });
+
+        document.getElementById('qr-info').textContent =
+            `${registros.length} registros · ${url.length} caracteres · Escanea con tu celular`;
+    }
+
+    function descargarQRImagen() {
+        const canvas = document.querySelector('#qrcode canvas');
+        const img    = document.querySelector('#qrcode img');
+        if (canvas) {
+            const link  = document.createElement('a');
+            link.download = 'inventario-qr.png';
+            link.href     = canvas.toDataURL();
+            link.click();
+        } else if (img) {
+            const link  = document.createElement('a');
+            link.download = 'inventario-qr.png';
+            link.href     = img.src;
+            link.click();
+        } else {
+            alert("Espera un momento a que el QR termine de generarse.");
+        }
+    }
+
+    // ── Scanner de QR con cámara ──
+    function iniciarScanner() {
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+        };
+
+        scannerActivo = new Html5Qrcode("scanner-container");
+        document.getElementById('scanner-status').textContent = "Cámara activa. Apunta al QR...";
+
+        scannerActivo.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                // QR leído exitosamente
+                procesarQREscaneado(decodedText);
+            },
+            (errorMsg) => { /* ignorar errores de frame */ }
+        ).catch(err => {
+            document.getElementById('scanner-status').textContent =
+                "Error al acceder a la cámara. Verifica los permisos.";
+            console.error("Scanner error:", err);
+        });
+    }
+
+    function detenerScanner() {
+        if (scannerActivo) {
+            scannerActivo.stop().then(() => {
+                scannerActivo = null;
+                document.getElementById('scanner-container').innerHTML = '';
+                cambiarPantalla('pantalla-menu');
+            }).catch(() => {
+                scannerActivo = null;
+                document.getElementById('scanner-container').innerHTML = '';
+                cambiarPantalla('pantalla-menu');
+            });
+        } else {
+            cambiarPantalla('pantalla-menu');
+        }
+    }
+
+    function procesarQREscaneado(texto) {
+        detenerScanner();
+        try {
+            const url    = new URL(texto);
+            const params = new URLSearchParams(url.search);
+            const datos  = params.get('d');
+
+            if (!datos) {
+                alert("❌ Este QR no contiene datos de inventario válidos.");
+                return;
+            }
+
+            const json      = pako.inflate(Uint8Array.from(atob(decodeURIComponent(datos)), c => c.charCodeAt(0)), { to: 'string' });
+            const importado = JSON.parse(json);
+
+            if (Array.isArray(importado) && importado.length > 0) {
+                if (registros.length > 0) {
+                    if (!confirm(`Ya tienes ${registros.length} registros. ¿Reemplazar con los ${importado.length} del QR?`)) return;
+                }
+                registros  = importado;
+                idRegistro = Math.max(...registros.map(r => r.id || 0)) + 1;
+                calcularYRenderizarKardex();
+                cambiarPantalla('pantalla-vista');
+                alert(`✅ Cargados ${registros.length} movimientos desde el QR.`);
+            } else {
+                alert("❌ El QR no contiene registros válidos.");
+            }
+        } catch(e) {
+            console.error("Error procesando QR:", e);
+            alert("❌ No se pudo leer el QR. Asegúrate de que sea un QR de este sistema.");
+        }
+    }
+
+    // ── Activar scanner al entrar a esa pantalla ──
+    function cambiarPantalla(id) {
+        // Detener scanner si salimos de esa pantalla
+        if (id !== 'pantalla-scanner' && scannerActivo) {
+            scannerActivo.stop().catch(() => {});
+            scannerActivo = null;
+            document.getElementById('scanner-container').innerHTML = '';
+        }
+        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+        document.getElementById(id).classList.add('activa');
+
+        if (id === 'pantalla-scanner') {
+            setTimeout(iniciarScanner, 300);
+        }
+    }
+
+    // ── Utilidades ──
     function formatearFechaEspanol(fechaRaw) {
         if (!fechaRaw) return "";
         const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         if (fechaRaw instanceof Date) {
-            const anio = fechaRaw.getUTCFullYear();
-            const mes  = meses[fechaRaw.getUTCMonth()];
-            const dia  = String(fechaRaw.getUTCDate()).padStart(2,'0');
-            return `${dia}-${mes}-${anio}`;
+            return `${String(fechaRaw.getUTCDate()).padStart(2,'0')}-${meses[fechaRaw.getUTCMonth()]}-${fechaRaw.getUTCFullYear()}`;
         }
         if (typeof fechaRaw === 'string' && fechaRaw.includes('-')) {
             const p = fechaRaw.split('-');
@@ -147,8 +363,7 @@
             if (v !== null && v !== undefined && typeof v === 'object' && 'result' in v) v = v.result;
             if (v !== null && typeof v === 'object' && Array.isArray(v.richText))
                 return v.richText.map(rt => rt.text || "").join("").trim();
-            if (v !== null && typeof v === 'object' && typeof v.text === 'string')
-                return v.text.trim();
+            if (v !== null && typeof v === 'object' && typeof v.text === 'string') return v.text.trim();
             if (v instanceof Date) return formatearFechaEspanol(v);
             if (v !== null && v !== undefined) return v.toString().trim();
             return cell.text ? cell.text.toString().trim() : "";
@@ -166,14 +381,8 @@
     }
 
     function getSafeCell(worksheet, fila, col) {
-        try {
-            return worksheet.getRow(fila).getCell(col);
-        } catch(e) { return null; }
-    }
-
-    function cambiarPantalla(id) {
-        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
-        document.getElementById(id).classList.add('activa');
+        try { return worksheet.getRow(fila).getCell(col); }
+        catch(e) { return null; }
     }
 
     function irAVista() {
@@ -221,8 +430,7 @@
             const haber      = reg.salida  * reg.unitario;
             const saldo      = debe - haber;
             const promedio   = (reg.entrada + reg.salida) > 0
-                ? (debe + haber) / (reg.entrada + reg.salida)
-                : reg.unitario;
+                ? (debe + haber) / (reg.entrada + reg.salida) : reg.unitario;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -247,11 +455,10 @@
     async function cargarExcel(event) {
         const archivo = event.target.files[0];
         if (!archivo) return;
-
         const reader = new FileReader();
         reader.onload = async function(e) {
             try {
-                const workbook = new ExcelJS.Workbook();
+                const workbook  = new ExcelJS.Workbook();
                 await workbook.xlsx.load(e.target.result);
                 const worksheet = workbook.worksheets[0];
                 const totalFilas = worksheet.rowCount;
@@ -259,50 +466,32 @@
                 registros  = [];
                 idRegistro = 1;
 
-                // PASO 1: Escanear las primeras 5 filas buscando TODAS las columnas
-                // Buscamos en DOS pasadas porque tu Excel tiene headers en 2 filas:
-                // Fila 1: UNIDADES, COSTO, VALORES (grupos)
-                // Fila 2: FECHA, CONCEPTO, CODIGO, PRODUCTO, Entrada, Salida, Unitario
-
-                let colMap = null;
+                let colMap    = null;
                 let headerRow = 2;
-
-                // Mapa acumulado para combinar info de fila 1 y fila 2
-                let mapAcum = {};
+                let mapAcum   = {};
 
                 for (let r = 1; r <= Math.min(5, totalFilas); r++) {
                     let tmpMap = { ...mapAcum };
-                    let hits   = 0;
-
                     for (let c = 1; c <= 20; c++) {
                         try {
                             const cell = getSafeCell(worksheet, r, c);
                             if (!cell) continue;
-                            const txt = getCellText(cell)
-                                .toUpperCase()
+                            const txt = getCellText(cell).toUpperCase()
                                 .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
                                 .replace(/\s+/g," ").trim();
-
                             if (!txt) continue;
-
-                            if (txt === "FECHA")    { tmpMap.fecha    = c; }
-                            if (txt === "CONCEPTO") { tmpMap.concepto = c; }
-                            if (txt === "CODIGO")   { tmpMap.codigo   = c; }
-                            if (txt === "PRODUCTO") { tmpMap.producto = c; }
-                            if (txt === "ENTRADA")  { tmpMap.entrada  = c; }
-                            if (txt === "SALIDA")   { tmpMap.salida   = c; }
-                            if (txt === "UNITARIO") { tmpMap.unitario = c; }
+                            if (txt === "FECHA")    tmpMap.fecha    = c;
+                            if (txt === "CONCEPTO") tmpMap.concepto = c;
+                            if (txt === "CODIGO")   tmpMap.codigo   = c;
+                            if (txt === "PRODUCTO") tmpMap.producto = c;
+                            if (txt === "ENTRADA")  tmpMap.entrada  = c;
+                            if (txt === "SALIDA")   tmpMap.salida   = c;
+                            if (txt === "UNITARIO") tmpMap.unitario = c;
                         } catch(e) { continue; }
                     }
-
-                    // Acumular lo encontrado hasta ahora
                     mapAcum = tmpMap;
-
-                    // Contar cuántos campos clave tenemos ya
-                    const campos = ['fecha','concepto','codigo','producto','entrada','salida','unitario'];
-                    hits = campos.filter(k => mapAcum[k]).length;
-
-                    // Si tenemos al menos 5 campos incluyendo los numéricos, esta es la última fila de header
+                    const hits = ['fecha','concepto','codigo','producto','entrada','salida','unitario']
+                        .filter(k => mapAcum[k]).length;
                     if (hits >= 5 && mapAcum.entrada && mapAcum.salida) {
                         colMap    = { ...mapAcum };
                         headerRow = r;
@@ -310,18 +499,11 @@
                     }
                 }
 
-                // Fallback absoluto si no detectó nada
                 if (!colMap || !colMap.entrada) {
-                    colMap = {
-                        fecha: 1, concepto: 2, codigo: 4,
-                        producto: 5, entrada: 8, salida: 9, unitario: 11
-                    };
+                    colMap    = { fecha:1, concepto:2, codigo:4, producto:5, entrada:8, salida:9, unitario:11 };
                     headerRow = 2;
                 }
 
-                console.log("Mapa detectado:", colMap, "| Datos desde fila:", headerRow + 1);
-
-                // PASO 2: Leer datos con loop for (sin eachRow)
                 let leidos = 0;
                 for (let r = headerRow + 1; r <= totalFilas; r++) {
                     try {
@@ -329,17 +511,12 @@
                         let fv = celdaFecha ? celdaFecha.value : null;
                         if (fv && typeof fv === 'object' && 'result' in fv) fv = fv.result;
                         const fechaFinal = (fv instanceof Date)
-                            ? formatearFechaEspanol(fv)
-                            : getCellText(celdaFecha);
+                            ? formatearFechaEspanol(fv) : getCellText(celdaFecha);
 
                         const conceptoStr = getCellText(getSafeCell(worksheet, r, colMap.concepto));
                         const codigoStr   = getCellText(getSafeCell(worksheet, r, colMap.codigo));
                         const productoStr = getCellText(getSafeCell(worksheet, r, colMap.producto));
-                        const entrada     = getCellNum(getSafeCell(worksheet, r, colMap.entrada));
-                        const salida      = getCellNum(getSafeCell(worksheet, r, colMap.salida));
-                        const unitario    = getCellNum(getSafeCell(worksheet, r, colMap.unitario));
 
-                        // Saltar filas vacías o que sean solo ceros sin texto
                         if (!fechaFinal && !conceptoStr && !productoStr) continue;
 
                         registros.push({
@@ -348,29 +525,41 @@
                             concepto: conceptoStr,
                             codigo:   codigoStr,
                             producto: productoStr,
-                            entrada,
-                            salida,
-                            unitario
+                            entrada:  getCellNum(getSafeCell(worksheet, r, colMap.entrada)),
+                            salida:   getCellNum(getSafeCell(worksheet, r, colMap.salida)),
+                            unitario: getCellNum(getSafeCell(worksheet, r, colMap.unitario))
                         });
                         leidos++;
-
-                    } catch(err) {
-                        console.warn(`Fila ${r} saltada:`, err.message);
-                        continue;
-                    }
+                    } catch(err) { continue; }
                 }
 
                 calcularYRenderizarKardex();
                 cambiarPantalla('pantalla-vista');
                 alert(`Excel cargado correctamente (${leidos} movimientos recuperados).`);
-
             } catch (error) {
-                console.error("Error:", error);
                 alert("Error: " + error.message);
             }
             event.target.value = '';
         };
         reader.readAsArrayBuffer(archivo);
+    }
+
+    async function descargarExcel() {
+        if (registros.length === 0) { alert("No hay datos para descargar."); return; }
+        const workbook  = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Kardex');
+        worksheet.addRow(['Fecha','Concepto','Código','Producto','Entrada','Salida','Existencia','Unitario','Promedio','Debe','Haber','Saldo']);
+        registros.forEach(reg => {
+            const existencia = reg.entrada - reg.salida;
+            const debe       = reg.entrada * reg.unitario;
+            const haber      = reg.salida  * reg.unitario;
+            const saldo      = debe - haber;
+            const promedio   = (reg.entrada + reg.salida) > 0 ? (debe + haber) / (reg.entrada + reg.salida) : reg.unitario;
+            worksheet.addRow([reg.fecha, reg.concepto, reg.codigo, reg.producto,
+                reg.entrada, reg.salida, existencia, reg.unitario, promedio, debe, haber, saldo]);
+        });
+        const buffer = await workbook.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), 'inventario.xlsx');
     }
 </script>
 </body>
