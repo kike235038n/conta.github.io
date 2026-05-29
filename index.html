@@ -18,28 +18,23 @@
             <h2>Sistema de Inventario General</h2>
             <h3>Control Multiproducto</h3>
         </div>
-
         <div class="menu-grid">
             <div class="card-btn" onclick="cambiarPantalla('pantalla-formulario')">
                 <div class="card-icon">📝</div>
                 <div class="card-title">Registrar Producto</div>
             </div>
-
             <div class="card-btn" onclick="irAVista()">
                 <div class="card-icon">📊</div>
                 <div class="card-title">Ver Tabla</div>
             </div>
-
             <div class="card-btn" onclick="descargarExcel()">
                 <div class="card-icon">📥</div>
                 <div class="card-title">Descargar Excel</div>
             </div>
-
             <div class="card-btn" onclick="document.getElementById('inputExcel').click()">
                 <div class="card-icon">📂</div>
                 <div class="card-title">Cargar Excel</div>
             </div>
-
             <input type="file" id="inputExcel" accept=".xlsx" style="display:none" onchange="cargarExcel(event)">
         </div>
     </div>
@@ -48,46 +43,38 @@
         <div class="header-title">
             <h2>Registrar Movimiento de Producto</h2>
         </div>
-
         <div class="form-container">
             <form id="formKardex" onsubmit="guardarRegistro(event)">
                 <div class="form-group">
                     <label>Fecha:</label>
                     <input type="date" id="inFecha" required>
                 </div>
-
                 <div class="form-group">
                     <label>Concepto (Ubicación):</label>
                     <input type="text" id="inConcepto" placeholder="Ej. Cubiculo num# 15" required>
                 </div>
-
                 <div class="form-group">
                     <label>Código:</label>
                     <input type="text" id="inCodigo" placeholder="Ej. SD SU630 240 GB SATA I" required>
                 </div>
-
                 <div class="form-group">
                     <label>Producto:</label>
                     <input type="text" id="inProducto" placeholder="Ej. SSD SU630 240 GB SATA III" required>
                 </div>
-
                 <div style="display: flex; gap: 15px;">
                     <div class="form-group" style="flex: 1;">
                         <label>Entrada (Unidades):</label>
                         <input type="number" id="inEntrada" min="0" value="0" required>
                     </div>
-
                     <div class="form-group" style="flex: 1;">
                         <label>Salida (Unidades):</label>
                         <input type="number" id="inSalida" min="0" value="0" required>
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>Costo Unitario ($):</label>
                     <input type="number" id="inUnitario" step="0.01" min="0" required>
                 </div>
-
                 <div class="btn-group">
                     <button type="button" class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">Volver</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -101,7 +88,6 @@
             <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver</button>
             <button class="btn btn-primary" onclick="descargarExcel()">📥 Descargar Excel</button>
         </div>
-
         <div style="overflow-x:auto;">
             <table id="kardexTable">
                 <thead>
@@ -139,31 +125,55 @@
 
     function formatearFechaEspanol(fechaRaw) {
         if (!fechaRaw) return "";
-        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-        
-        if (typeof fechaRaw === 'string' && fechaRaw.includes('-')) {
-            const partes = fechaRaw.split('-');
-            if (partes.length === 3 && partes[0].length === 4) {
-                const anio = partes[0];
-                const mes = meses[parseInt(partes[1], 10) - 1];
-                const dia = partes[2].padStart(2, '0');
-                return `${dia}-${mes}-${anio}`;
-            }
-        }
-        
+        const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         if (fechaRaw instanceof Date) {
             const anio = fechaRaw.getUTCFullYear();
-            const mes = meses[fechaRaw.getUTCMonth()];
-            const dia = String(fechaRaw.getUTCDate()).padStart(2, '0');
+            const mes  = meses[fechaRaw.getUTCMonth()];
+            const dia  = String(fechaRaw.getUTCDate()).padStart(2,'0');
             return `${dia}-${mes}-${anio}`;
         }
-        
+        if (typeof fechaRaw === 'string' && fechaRaw.includes('-')) {
+            const p = fechaRaw.split('-');
+            if (p.length === 3 && p[0].length === 4)
+                return `${p[2].padStart(2,'0')}-${meses[parseInt(p[1],10)-1]}-${p[0]}`;
+        }
         return fechaRaw.toString();
     }
 
-    function cambiarPantalla(idPantalla) {
+    function getCellText(cell) {
+        if (!cell) return "";
+        try {
+            let v = cell.value;
+            if (v !== null && v !== undefined && typeof v === 'object' && 'result' in v) v = v.result;
+            if (v !== null && typeof v === 'object' && Array.isArray(v.richText))
+                return v.richText.map(rt => rt.text || "").join("").trim();
+            if (v !== null && typeof v === 'object' && typeof v.text === 'string')
+                return v.text.trim();
+            if (v instanceof Date) return formatearFechaEspanol(v);
+            if (v !== null && v !== undefined) return v.toString().trim();
+            return cell.text ? cell.text.toString().trim() : "";
+        } catch(e) { return ""; }
+    }
+
+    function getCellNum(cell) {
+        if (!cell) return 0;
+        try {
+            let v = cell.value;
+            if (v !== null && typeof v === 'object' && 'result' in v) v = v.result;
+            const n = parseFloat(v);
+            return isNaN(n) ? 0 : n;
+        } catch(e) { return 0; }
+    }
+
+    function getSafeCell(worksheet, fila, col) {
+        try {
+            return worksheet.getRow(fila).getCell(col);
+        } catch(e) { return null; }
+    }
+
+    function cambiarPantalla(id) {
         document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
-        document.getElementById(idPantalla).classList.add('activa');
+        document.getElementById(id).classList.add('activa');
     }
 
     function irAVista() {
@@ -173,22 +183,19 @@
 
     function guardarRegistro(e) {
         e.preventDefault();
-        
-        const nuevoRegistro = {
-            id: idRegistro++,
-            fecha: formatearFechaEspanol(document.getElementById('inFecha').value),
+        registros.push({
+            id:       idRegistro++,
+            fecha:    formatearFechaEspanol(document.getElementById('inFecha').value),
             concepto: document.getElementById('inConcepto').value,
-            codigo: document.getElementById('inCodigo').value,
+            codigo:   document.getElementById('inCodigo').value,
             producto: document.getElementById('inProducto').value,
-            entrada: parseFloat(document.getElementById('inEntrada').value) || 0,
-            salida: parseFloat(document.getElementById('inSalida').value) || 0,
+            entrada:  parseFloat(document.getElementById('inEntrada').value) || 0,
+            salida:   parseFloat(document.getElementById('inSalida').value)  || 0,
             unitario: parseFloat(document.getElementById('inUnitario').value) || 0
-        };
-
-        registros.push(nuevoRegistro);
+        });
         document.getElementById('formKardex').reset();
         document.getElementById('inEntrada').value = 0;
-        document.getElementById('inSalida').value = 0;
+        document.getElementById('inSalida').value  = 0;
         alert("Movimiento guardado correctamente");
     }
 
@@ -200,26 +207,29 @@
     }
 
     function formatMoney(num) {
-        return (num || num === 0) ? Number(num).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+        return (num !== undefined && num !== null)
+            ? Number(num).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            : "";
     }
 
     function calcularYRenderizarKardex() {
         const tbody = document.getElementById('kardexBody');
         tbody.innerHTML = '';
-        
         registros.forEach((reg, index) => {
-            let existencia = reg.entrada - reg.salida;
-            let debe = reg.entrada * reg.unitario;
-            let haber = reg.salida * reg.unitario;
-            let saldo = debe - haber;
-            let promedio = existencia > 0 ? (saldo / existencia) : reg.unitario;
+            const existencia = reg.entrada - reg.salida;
+            const debe       = reg.entrada * reg.unitario;
+            const haber      = reg.salida  * reg.unitario;
+            const saldo      = debe - haber;
+            const promedio   = (reg.entrada + reg.salida) > 0
+                ? (debe + haber) / (reg.entrada + reg.salida)
+                : reg.unitario;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td style="white-space: nowrap;">${reg.fecha}</td>
-                <td style="text-align: left;">${reg.concepto}</td>
-                <td style="text-align: left;">${reg.codigo}</td>
-                <td style="text-align: left;">${reg.producto}</td>
+                <td style="white-space:nowrap">${reg.fecha}</td>
+                <td style="text-align:left">${reg.concepto}</td>
+                <td style="text-align:left">${reg.codigo}</td>
+                <td style="text-align:left">${reg.producto}</td>
                 <td>${reg.entrada}</td>
                 <td>${reg.salida}</td>
                 <td><strong>${existencia}</strong></td>
@@ -228,75 +238,10 @@
                 <td>${formatMoney(debe)}</td>
                 <td>${formatMoney(haber)}</td>
                 <td><strong>${formatMoney(saldo)}</strong></td>
-                <td>
-                    <button class="btn-delete" onclick="eliminarRegistro(${index})">🗑️</button>
-                </td>
+                <td><button class="btn-delete" onclick="eliminarRegistro(${index})">🗑️</button></td>
             `;
             tbody.appendChild(tr);
         });
-    }
-
-    async function descargarExcel() {
-        if (registros.length === 0) {
-            alert("No hay datos para exportar");
-            return;
-        }
-
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Discos duros');
-
-        const rowEncabezado1 = worksheet.addRow(['', '', '', '', 'UNIDADES', '', '', 'COSTO', '', 'VALORES', '', '']);
-        worksheet.mergeCells('E1:G1'); 
-        worksheet.mergeCells('H1:I1'); 
-        worksheet.mergeCells('J1:L1'); 
-
-        const rowEncabezado2 = worksheet.addRow(['FECHA', 'CONCEPTO', 'CODIGO', 'PRODUCTO', 'Entrada', 'Salida', 'Existencia', 'Unitario', 'Promedio', 'Debe', 'Haber', 'Saldo']);
-        worksheet.mergeCells('A1:A2'); 
-        worksheet.mergeCells('B1:B2'); 
-        worksheet.mergeCells('C1:C2'); 
-        worksheet.mergeCells('D1:D2'); 
-
-        [rowEncabezado1, rowEncabezado2].forEach(row => {
-            row.eachCell(cell => {
-                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }; 
-                cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                cell.border = { top: {style:'thin', color: {argb:'FF00B050'}}, bottom: {style:'thin', color: {argb:'FF00B050'}} };
-            });
-        });
-
-        registros.forEach(reg => {
-            let existencia = reg.entrada - reg.salida;
-            let debe = reg.entrada * reg.unitario;
-            let haber = reg.salida * reg.unitario;
-            let saldo = debe - haber;
-            let promedio = existencia > 0 ? (saldo / existencia) : reg.unitario;
-
-            const row = worksheet.addRow([
-                reg.fecha, reg.concepto, reg.codigo, reg.producto,
-                reg.entrada, reg.salida, existencia, reg.unitario, promedio, debe, haber, saldo
-            ]);
-
-            row.eachCell((cell, colNumber) => {
-                cell.border = {
-                    top: {style:'thin'}, left: {style:'thin'}, 
-                    bottom: {style:'thin'}, right: {style:'thin'}
-                };
-                if(colNumber >= 8) {
-                    cell.numFmt = '#,##0.00';
-                }
-            });
-        });
-
-        worksheet.columns.forEach((col, i) => {
-            if (i === 1 || i === 2 || i === 3) col.width = 25; 
-            else if (i === 0) col.width = 12; 
-            else col.width = 10; 
-        });
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        saveAs(blob, 'CONTADURIA.xlsx');
     }
 
     async function cargarExcel(event) {
@@ -304,73 +249,127 @@
         if (!archivo) return;
 
         const reader = new FileReader();
-        
         reader.onload = async function(e) {
             try {
-                const data = e.target.result;
                 const workbook = new ExcelJS.Workbook();
-                await workbook.xlsx.load(data);
-                
-                const worksheet = workbook.worksheets[0]; 
-                
-                registros = [];
+                await workbook.xlsx.load(e.target.result);
+                const worksheet = workbook.worksheets[0];
+                const totalFilas = worksheet.rowCount;
+
+                registros  = [];
                 idRegistro = 1;
 
-                worksheet.eachRow((row, rowNumber) => {
-                    if (rowNumber <= 2) return;
-                    
-                    let valFecha = row.getCell(1).value;
-                    let fechaFinal = "";
+                // PASO 1: Escanear las primeras 5 filas buscando TODAS las columnas
+                // Buscamos en DOS pasadas porque tu Excel tiene headers en 2 filas:
+                // Fila 1: UNIDADES, COSTO, VALORES (grupos)
+                // Fila 2: FECHA, CONCEPTO, CODIGO, PRODUCTO, Entrada, Salida, Unitario
 
-                    if (valFecha && valFecha.result !== undefined) {
-                        valFecha = valFecha.result;
+                let colMap = null;
+                let headerRow = 2;
+
+                // Mapa acumulado para combinar info de fila 1 y fila 2
+                let mapAcum = {};
+
+                for (let r = 1; r <= Math.min(5, totalFilas); r++) {
+                    let tmpMap = { ...mapAcum };
+                    let hits   = 0;
+
+                    for (let c = 1; c <= 20; c++) {
+                        try {
+                            const cell = getSafeCell(worksheet, r, c);
+                            if (!cell) continue;
+                            const txt = getCellText(cell)
+                                .toUpperCase()
+                                .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+                                .replace(/\s+/g," ").trim();
+
+                            if (!txt) continue;
+
+                            if (txt === "FECHA")    { tmpMap.fecha    = c; }
+                            if (txt === "CONCEPTO") { tmpMap.concepto = c; }
+                            if (txt === "CODIGO")   { tmpMap.codigo   = c; }
+                            if (txt === "PRODUCTO") { tmpMap.producto = c; }
+                            if (txt === "ENTRADA")  { tmpMap.entrada  = c; }
+                            if (txt === "SALIDA")   { tmpMap.salida   = c; }
+                            if (txt === "UNITARIO") { tmpMap.unitario = c; }
+                        } catch(e) { continue; }
                     }
 
-                    if (valFecha instanceof Date) {
-                        fechaFinal = formatearFechaEspanol(valFecha);
-                    } else {
-                        fechaFinal = formatearFechaEspanol(row.getCell(1).text || "");
+                    // Acumular lo encontrado hasta ahora
+                    mapAcum = tmpMap;
+
+                    // Contar cuántos campos clave tenemos ya
+                    const campos = ['fecha','concepto','codigo','producto','entrada','salida','unitario'];
+                    hits = campos.filter(k => mapAcum[k]).length;
+
+                    // Si tenemos al menos 5 campos incluyendo los numéricos, esta es la última fila de header
+                    if (hits >= 5 && mapAcum.entrada && mapAcum.salida) {
+                        colMap    = { ...mapAcum };
+                        headerRow = r;
+                        break;
                     }
+                }
 
-                    const productoTxt = row.getCell(4).text || "";
-
-                    if (fechaFinal.trim() === "" && productoTxt.trim() === "") return;
-
-                    let valEntrada = row.getCell(5).value;
-                    if(valEntrada && valEntrada.result !== undefined) valEntrada = valEntrada.result;
-
-                    let valSalida = row.getCell(6).value;
-                    if(valSalida && valSalida.result !== undefined) valSalida = valSalida.result;
-
-                    let valUnitario = row.getCell(8).value;
-                    if(valUnitario && valUnitario.result !== undefined) valUnitario = valUnitario.result;
-
-                    const registro = {
-                        id: idRegistro++,
-                        fecha: fechaFinal,
-                        concepto: row.getCell(2).text || "",
-                        codigo: row.getCell(3).text || "",
-                        producto: productoTxt,
-                        entrada: parseFloat(valEntrada) || 0,
-                        salida: parseFloat(valSalida) || 0,
-                        unitario: parseFloat(valUnitario) || 0
+                // Fallback absoluto si no detectó nada
+                if (!colMap || !colMap.entrada) {
+                    colMap = {
+                        fecha: 1, concepto: 2, codigo: 4,
+                        producto: 5, entrada: 8, salida: 9, unitario: 11
                     };
+                    headerRow = 2;
+                }
 
-                    registros.push(registro);
-                });
+                console.log("Mapa detectado:", colMap, "| Datos desde fila:", headerRow + 1);
+
+                // PASO 2: Leer datos con loop for (sin eachRow)
+                let leidos = 0;
+                for (let r = headerRow + 1; r <= totalFilas; r++) {
+                    try {
+                        const celdaFecha = getSafeCell(worksheet, r, colMap.fecha);
+                        let fv = celdaFecha ? celdaFecha.value : null;
+                        if (fv && typeof fv === 'object' && 'result' in fv) fv = fv.result;
+                        const fechaFinal = (fv instanceof Date)
+                            ? formatearFechaEspanol(fv)
+                            : getCellText(celdaFecha);
+
+                        const conceptoStr = getCellText(getSafeCell(worksheet, r, colMap.concepto));
+                        const codigoStr   = getCellText(getSafeCell(worksheet, r, colMap.codigo));
+                        const productoStr = getCellText(getSafeCell(worksheet, r, colMap.producto));
+                        const entrada     = getCellNum(getSafeCell(worksheet, r, colMap.entrada));
+                        const salida      = getCellNum(getSafeCell(worksheet, r, colMap.salida));
+                        const unitario    = getCellNum(getSafeCell(worksheet, r, colMap.unitario));
+
+                        // Saltar filas vacías o que sean solo ceros sin texto
+                        if (!fechaFinal && !conceptoStr && !productoStr) continue;
+
+                        registros.push({
+                            id: idRegistro++,
+                            fecha:    fechaFinal,
+                            concepto: conceptoStr,
+                            codigo:   codigoStr,
+                            producto: productoStr,
+                            entrada,
+                            salida,
+                            unitario
+                        });
+                        leidos++;
+
+                    } catch(err) {
+                        console.warn(`Fila ${r} saltada:`, err.message);
+                        continue;
+                    }
+                }
 
                 calcularYRenderizarKardex();
                 cambiarPantalla('pantalla-vista');
-                
-                alert("Excel cargado correctamente (" + registros.length + " movimientos recuperados).");
+                alert(`Excel cargado correctamente (${leidos} movimientos recuperados).`);
 
             } catch (error) {
-                alert("Hubo un problema al intentar leer el documento. Asegúrate de que no esté corrupto y tenga la estructura de las columnas correcta.");
+                console.error("Error:", error);
+                alert("Error: " + error.message);
             }
-            
-            event.target.value = ''; 
+            event.target.value = '';
         };
-
         reader.readAsArrayBuffer(archivo);
     }
 </script>
