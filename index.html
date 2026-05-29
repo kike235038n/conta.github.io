@@ -101,7 +101,7 @@
     <!-- PANTALLA TABLA -->
     <div id="pantalla-vista" class="pantalla">
         <div class="btn-group" style="margin-bottom:20px;">
-            <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver</button>
+            <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅️ Volver</button>
             <button class="btn btn-primary" onclick="mostrarQR()">📲 Generar QR</button>
             <button class="btn btn-primary" onclick="descargarExcel()">📥 Descargar Excel</button>
         </div>
@@ -141,7 +141,7 @@
             <p id="qr-info" style="color:#aaa; font-size:13px;"></p>
             <br>
             <div class="btn-group">
-                <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver</button>
+                <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅️ Volver</button>
                 <button class="btn btn-primary" onclick="descargarQRImagen()">💾 Guardar QR</button>
             </div>
         </div>
@@ -158,7 +158,7 @@
             <br>
             <p id="scanner-status" style="color:#aaa; font-size:13px;">Iniciando cámara...</p>
             <br>
-            <button class="btn btn-secondary" onclick="detenerScanner()">⬅ Volver</button>
+            <button class="btn btn-secondary" onclick="detenerScanner()">⬅️ Volver</button>
         </div>
     </div>
 
@@ -184,7 +184,7 @@
                     idRegistro = Math.max(...registros.map(r => r.id || 0)) + 1;
                     calcularYRenderizarKardex();
                     cambiarPantalla('pantalla-vista');
-                    alert(`✅ Datos cargados desde QR: ${registros.length} movimientos.`);
+                    alert(✅ Datos cargados desde QR: ${registros.length} movimientos.);
                     // Limpiar URL para no recargar al refrescar
                     window.history.replaceState({}, '', window.location.pathname);
                 }
@@ -212,7 +212,7 @@
         console.log("URL generada:", url.length, "caracteres");
 
         if (url.length > 2953) {
-            alert(`⚠️ Hay demasiados datos para un QR (${registros.length} registros, ${url.length} caracteres).\nEl QR soporta hasta ~2900 caracteres. Intenta con menos registros.`);
+            alert(⚠️ Hay demasiados datos para un QR (${registros.length} registros, ${url.length} caracteres).\nEl QR soporta hasta ~2900 caracteres. Intenta con menos registros.);
             return;
         }
 
@@ -231,7 +231,7 @@
         });
 
         document.getElementById('qr-info').textContent =
-            `${registros.length} registros · ${url.length} caracteres · Escanea con tu celular`;
+            ${registros.length} registros · ${url.length} caracteres · Escanea con tu celular;
     }
 
     function descargarQRImagen() {
@@ -311,13 +311,13 @@
 
             if (Array.isArray(importado) && importado.length > 0) {
                 if (registros.length > 0) {
-                    if (!confirm(`Ya tienes ${registros.length} registros. ¿Reemplazar con los ${importado.length} del QR?`)) return;
+                    if (!confirm(Ya tienes ${registros.length} registros. ¿Reemplazar con los ${importado.length} del QR?)) return;
                 }
                 registros  = importado;
                 idRegistro = Math.max(...registros.map(r => r.id || 0)) + 1;
                 calcularYRenderizarKardex();
                 cambiarPantalla('pantalla-vista');
-                alert(`✅ Cargados ${registros.length} movimientos desde el QR.`);
+                alert(✅ Cargados ${registros.length} movimientos desde el QR.);
             } else {
                 alert("❌ El QR no contiene registros válidos.");
             }
@@ -371,12 +371,12 @@
         if (!fechaRaw) return "";
         const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
         if (fechaRaw instanceof Date) {
-            return `${String(fechaRaw.getUTCDate()).padStart(2,'0')}-${meses[fechaRaw.getUTCMonth()]}-${fechaRaw.getUTCFullYear()}`;
+            return ${String(fechaRaw.getUTCDate()).padStart(2,'0')}-${meses[fechaRaw.getUTCMonth()]}-${fechaRaw.getUTCFullYear()};
         }
         if (typeof fechaRaw === 'string' && fechaRaw.includes('-')) {
             const p = fechaRaw.split('-');
             if (p.length === 3 && p[0].length === 4)
-                return `${p[2].padStart(2,'0')}-${meses[parseInt(p[1],10)-1]}-${p[0]}`;
+                return ${p[2].padStart(2,'0')}-${meses[parseInt(p[1],10)-1]}-${p[0]};
         }
         return fechaRaw.toString();
     }
@@ -560,7 +560,7 @@
 
                 calcularYRenderizarKardex();
                 cambiarPantalla('pantalla-vista');
-                alert(`Excel cargado correctamente (${leidos} movimientos recuperados).`);
+                alert(Excel cargado correctamente (${leidos} movimientos recuperados).);
             } catch (error) {
                 alert("Error: " + error.message);
             }
