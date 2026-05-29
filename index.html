@@ -12,11 +12,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    <!-- QR READER -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- LECTOR QR REAL -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
 
 </head>
-
 <body>
 
 <div class="container">
@@ -31,68 +30,53 @@
 
         <div class="menu-grid">
 
-            <div class="card-btn"
-                 onclick="cambiarPantalla('pantalla-formulario')">
-
+            <div class="card-btn" onclick="cambiarPantalla('pantalla-formulario')">
                 <div class="card-icon">📝</div>
                 <div class="card-title">Registrar Producto</div>
-
             </div>
 
-            <div class="card-btn"
-                 onclick="irAVista()">
-
+            <div class="card-btn" onclick="irAVista()">
                 <div class="card-icon">📊</div>
                 <div class="card-title">Ver Tabla</div>
-
             </div>
 
-            <div class="card-btn"
-                 onclick="mostrarQR()">
-
+            <div class="card-btn" onclick="mostrarQR()">
                 <div class="card-icon">📲</div>
                 <div class="card-title">Descargar QR</div>
-
             </div>
 
-            <div class="card-btn"
-                 onclick="document.getElementById('inputQRImagen').click()">
-
+            <div class="card-btn" onclick="document.getElementById('inputQRImagen').click()">
                 <div class="card-icon">🔍</div>
                 <div class="card-title">Cargar por QR</div>
-
             </div>
 
-            <div class="card-btn"
-                 onclick="descargarExcel()">
-
+            <div class="card-btn" onclick="descargarExcel()">
                 <div class="card-icon">📥</div>
                 <div class="card-title">Descargar Excel</div>
-
             </div>
 
-            <div class="card-btn"
-                 onclick="document.getElementById('inputExcel').click()">
-
+            <div class="card-btn" onclick="document.getElementById('inputExcel').click()">
                 <div class="card-icon">📂</div>
                 <div class="card-title">Cargar Excel</div>
-
             </div>
 
-            <input type="file"
-                   id="inputExcel"
-                   accept=".xlsx"
-                   style="display:none"
-                   onchange="cargarExcel(event)">
+            <input
+                type="file"
+                id="inputExcel"
+                accept=".xlsx"
+                style="display:none"
+                onchange="cargarExcel(event)"
+            >
 
-            <input type="file"
-                   id="inputQRImagen"
-                   accept="image/*"
-                   style="display:none"
-                   onchange="escanearArchivo(event)">
+            <input
+                type="file"
+                id="inputQRImagen"
+                accept="image/*"
+                style="display:none"
+                onchange="escanearArchivo(event)"
+            >
 
         </div>
-
     </div>
 
     <!-- FORMULARIO -->
@@ -104,82 +88,62 @@
 
         <div class="form-container">
 
-            <form id="formKardex"
-                  onsubmit="guardarRegistro(event)">
+            <form id="formKardex" onsubmit="guardarRegistro(event)">
 
                 <div class="form-group">
                     <label>Fecha:</label>
-                    <input type="date"
-                           id="inFecha"
-                           required>
+                    <input type="date" id="inFecha" required>
                 </div>
 
                 <div class="form-group">
                     <label>Concepto:</label>
-                    <input type="text"
-                           id="inConcepto"
-                           required>
+                    <input type="text" id="inConcepto" required>
                 </div>
 
                 <div class="form-group">
                     <label>Código:</label>
-                    <input type="text"
-                           id="inCodigo"
-                           required>
+                    <input type="text" id="inCodigo" required>
                 </div>
 
                 <div class="form-group">
                     <label>Producto:</label>
-                    <input type="text"
-                           id="inProducto"
-                           required>
+                    <input type="text" id="inProducto" required>
                 </div>
 
                 <div style="display:flex; gap:15px;">
 
                     <div class="form-group" style="flex:1;">
                         <label>Entrada:</label>
-                        <input type="number"
-                               id="inEntrada"
-                               min="0"
-                               value="0"
-                               required>
+                        <input type="number" id="inEntrada" value="0">
                     </div>
 
                     <div class="form-group" style="flex:1;">
                         <label>Salida:</label>
-                        <input type="number"
-                               id="inSalida"
-                               min="0"
-                               value="0"
-                               required>
+                        <input type="number" id="inSalida" value="0">
                     </div>
 
                 </div>
 
                 <div class="form-group">
                     <label>Costo Unitario:</label>
-                    <input type="number"
-                           id="inUnitario"
-                           step="0.01"
-                           required>
+                    <input type="number" id="inUnitario" step="0.01" required>
                 </div>
 
                 <div class="btn-group">
 
-                    <button type="button"
-                            class="btn btn-secondary"
-                            onclick="cambiarPantalla('pantalla-menu')">
-
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="cambiarPantalla('pantalla-menu')"
+                    >
                         Volver
-
                     </button>
 
-                    <button type="submit"
-                            class="btn btn-primary">
-
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                    >
                         Guardar
-
                     </button>
 
                 </div>
@@ -187,7 +151,6 @@
             </form>
 
         </div>
-
     </div>
 
     <!-- TABLA -->
@@ -195,25 +158,16 @@
 
         <div class="btn-group" style="margin-bottom:20px;">
 
-            <button class="btn btn-secondary"
-                    onclick="cambiarPantalla('pantalla-menu')">
-
+            <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">
                 ⬅ Volver
-
             </button>
 
-            <button class="btn btn-primary"
-                    onclick="mostrarQR()">
-
+            <button class="btn btn-primary" onclick="mostrarQR()">
                 📲 Generar QR
-
             </button>
 
-            <button class="btn btn-primary"
-                    onclick="descargarExcel()">
-
+            <button class="btn btn-primary" onclick="descargarExcel()">
                 📥 Descargar Excel
-
             </button>
 
         </div>
@@ -224,20 +178,20 @@
 
                 <thead>
 
-                <tr>
-                    <th>Fecha</th>
-                    <th>Concepto</th>
-                    <th>Código</th>
-                    <th>Producto</th>
-                    <th>Entrada</th>
-                    <th>Salida</th>
-                    <th>Existencia</th>
-                    <th>Unitario</th>
-                    <th>Debe</th>
-                    <th>Haber</th>
-                    <th>Saldo</th>
-                    <th>Acción</th>
-                </tr>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Código</th>
+                        <th>Producto</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Existencia</th>
+                        <th>Unitario</th>
+                        <th>Debe</th>
+                        <th>Haber</th>
+                        <th>Saldo</th>
+                        <th>Acción</th>
+                    </tr>
 
                 </thead>
 
@@ -253,44 +207,41 @@
     <div id="pantalla-qr" class="pantalla">
 
         <div class="header-title">
-            <h2>Código QR del Inventario</h2>
+            <h2>Código QR</h2>
         </div>
 
         <div style="text-align:center; padding:20px;">
 
-            <p style="color:#aaa; margin-bottom:20px;">
-                Escanea este QR para recuperar el inventario
-            </p>
-
-            <div id="qrcode"
-                 style="display:inline-block;
-                        background:#fff;
-                        padding:16px;
-                        border-radius:12px;">
-            </div>
+            <div
+                id="qrcode"
+                style="
+                    display:inline-block;
+                    background:white;
+                    padding:20px;
+                    border-radius:15px;
+                "
+            ></div>
 
             <br><br>
 
-            <p id="qr-info"
-               style="color:#aaa;">
-            </p>
+            <p id="qr-info"></p>
 
             <br>
 
             <div class="btn-group">
 
-                <button class="btn btn-secondary"
-                        onclick="cambiarPantalla('pantalla-menu')">
-
+                <button
+                    class="btn btn-secondary"
+                    onclick="cambiarPantalla('pantalla-menu')"
+                >
                     ⬅ Volver
-
                 </button>
 
-                <button class="btn btn-primary"
-                        onclick="descargarQRImagen()">
-
+                <button
+                    class="btn btn-primary"
+                    onclick="descargarQRImagen()"
+                >
                     💾 Guardar QR
-
                 </button>
 
             </div>
@@ -307,8 +258,7 @@ let registros = [];
 let idRegistro = 1;
 
 const BASE_URL =
-    window.location.origin +
-    window.location.pathname;
+"https://kike235038n.github.io/conta.github.io/";
 
 window.addEventListener('load', () => {
 
@@ -320,53 +270,39 @@ window.addEventListener('load', () => {
 
         try{
 
-            const compressedData = atob(datos);
-
-            const uint8Array = Uint8Array.from(
-                compressedData,
-                c => c.charCodeAt(0)
-            );
-
             const json = pako.inflate(
-                uint8Array,
-                { to:'string' }
+                Uint8Array.from(
+                    atob(datos),
+                    c => c.charCodeAt(0)
+                ),
+                { to: 'string' }
             );
 
-            const importado = JSON.parse(json);
+            registros = JSON.parse(json);
 
-            if(Array.isArray(importado)){
+            calcularYRenderizarKardex();
 
-                registros = importado;
+            cambiarPantalla('pantalla-vista');
 
-                idRegistro =
-                    Math.max(...registros.map(r => r.id || 0)) + 1;
-
-                calcularYRenderizarKardex();
-
-                cambiarPantalla('pantalla-vista');
-
-                alert(`✅ Datos cargados desde QR`);
-
-            }
+            alert("✅ Datos cargados desde QR");
 
         }catch(e){
 
             console.error(e);
 
         }
-
     }
-
 });
 
 function cambiarPantalla(id){
 
-    document.querySelectorAll('.pantalla')
+    document
+        .querySelectorAll('.pantalla')
         .forEach(p => p.classList.remove('activa'));
 
-    document.getElementById(id)
+    document
+        .getElementById(id)
         .classList.add('activa');
-
 }
 
 function guardarRegistro(e){
@@ -375,31 +311,34 @@ function guardarRegistro(e){
 
     registros.push({
 
-        id:idRegistro++,
+        id: idRegistro++,
 
-        fecha:document.getElementById('inFecha').value,
+        fecha:
+        document.getElementById('inFecha').value,
 
-        concepto:document.getElementById('inConcepto').value,
+        concepto:
+        document.getElementById('inConcepto').value,
 
-        codigo:document.getElementById('inCodigo').value,
+        codigo:
+        document.getElementById('inCodigo').value,
 
-        producto:document.getElementById('inProducto').value,
+        producto:
+        document.getElementById('inProducto').value,
 
-        entrada:Number(document.getElementById('inEntrada').value)||0,
+        entrada:
+        parseFloat(document.getElementById('inEntrada').value) || 0,
 
-        salida:Number(document.getElementById('inSalida').value)||0,
+        salida:
+        parseFloat(document.getElementById('inSalida').value) || 0,
 
-        unitario:Number(document.getElementById('inUnitario').value)||0
+        unitario:
+        parseFloat(document.getElementById('inUnitario').value) || 0
 
     });
 
     document.getElementById('formKardex').reset();
 
-    document.getElementById('inEntrada').value = 0;
-    document.getElementById('inSalida').value = 0;
-
-    alert("✅ Movimiento guardado");
-
+    alert("✅ Registro guardado");
 }
 
 function irAVista(){
@@ -407,58 +346,34 @@ function irAVista(){
     calcularYRenderizarKardex();
 
     cambiarPantalla('pantalla-vista');
-
-}
-
-function eliminarRegistro(index){
-
-    if(confirm("¿Eliminar registro?")){
-
-        registros.splice(index,1);
-
-        calcularYRenderizarKardex();
-
-    }
-
-}
-
-function formatMoney(num){
-
-    return Number(num).toLocaleString(
-        'es-MX',
-        {
-            minimumFractionDigits:2,
-            maximumFractionDigits:2
-        }
-    );
-
 }
 
 function calcularYRenderizarKardex(){
 
     const tbody =
-        document.getElementById('kardexBody');
+    document.getElementById('kardexBody');
 
     tbody.innerHTML = '';
 
-    registros.forEach((reg,index)=>{
+    registros.forEach((reg, index) => {
 
         const existencia =
-            reg.entrada - reg.salida;
+        reg.entrada - reg.salida;
 
         const debe =
-            reg.entrada * reg.unitario;
+        reg.entrada * reg.unitario;
 
         const haber =
-            reg.salida * reg.unitario;
+        reg.salida * reg.unitario;
 
         const saldo =
-            debe - haber;
+        debe - haber;
 
         const tr =
-            document.createElement('tr');
+        document.createElement('tr');
 
         tr.innerHTML = `
+
             <td>${reg.fecha}</td>
             <td>${reg.concepto}</td>
             <td>${reg.codigo}</td>
@@ -466,41 +381,43 @@ function calcularYRenderizarKardex(){
             <td>${reg.entrada}</td>
             <td>${reg.salida}</td>
             <td>${existencia}</td>
-            <td>${formatMoney(reg.unitario)}</td>
-            <td>${formatMoney(debe)}</td>
-            <td>${formatMoney(haber)}</td>
-            <td>${formatMoney(saldo)}</td>
+            <td>${reg.unitario}</td>
+            <td>${debe.toFixed(2)}</td>
+            <td>${haber.toFixed(2)}</td>
+            <td>${saldo.toFixed(2)}</td>
+
             <td>
-                <button class="btn-delete"
-                        onclick="eliminarRegistro(${index})">
-
+                <button onclick="eliminarRegistro(${index})">
                     🗑️
-
                 </button>
             </td>
         `;
 
         tbody.appendChild(tr);
-
     });
+}
 
+function eliminarRegistro(index){
+
+    registros.splice(index, 1);
+
+    calcularYRenderizarKardex();
 }
 
 function generarURLConDatos(){
 
     const json =
-        JSON.stringify(registros);
+    JSON.stringify(registros);
 
     const compressed =
-        pako.deflate(json);
+    pako.deflate(json);
 
     const b64 =
-        btoa(String.fromCharCode(...compressed));
+    btoa(
+        String.fromCharCode(...compressed)
+    );
 
-    return BASE_URL +
-        "?d=" +
-        encodeURIComponent(b64);
-
+    return BASE_URL + "?d=" + encodeURIComponent(b64);
 }
 
 function mostrarQR(){
@@ -510,86 +427,129 @@ function mostrarQR(){
         alert("No hay datos");
 
         return;
-
     }
 
     const url =
-        generarURLConDatos();
+    generarURLConDatos();
 
     cambiarPantalla('pantalla-qr');
 
-    document.getElementById('qrcode').innerHTML = '';
+    const contenedor =
+    document.getElementById('qrcode');
 
-    new QRCode(
-        document.getElementById('qrcode'),
-        {
-            text:url,
-            width:256,
-            height:256,
-            colorDark:"#000",
-            colorLight:"#fff",
-            correctLevel:QRCode.CorrectLevel.M
-        }
-    );
+    contenedor.innerHTML = '';
+
+    new QRCode(contenedor, {
+
+        text: url,
+
+        width: 420,
+
+        height: 420,
+
+        colorDark: "#000000",
+
+        colorLight: "#ffffff",
+
+        correctLevel: QRCode.CorrectLevel.H
+
+    });
 
     document.getElementById('qr-info').textContent =
-        `${registros.length} registros`;
-
+    `${registros.length} registros`;
 }
 
 function descargarQRImagen(){
 
-    const canvas =
+    setTimeout(() => {
+
+        const canvas =
         document.querySelector('#qrcode canvas');
 
-    if(!canvas){
+        if(!canvas){
 
-        alert("QR no disponible");
+            alert("QR no generado");
 
-        return;
+            return;
+        }
 
-    }
-
-    const link =
+        const link =
         document.createElement('a');
 
-    link.download =
+        link.download =
         'inventario-qr.png';
 
-    link.href =
-        canvas.toDataURL();
+        link.href =
+        canvas.toDataURL('image/png');
 
-    link.click();
+        link.click();
 
+    }, 500);
 }
 
-async function escanearArchivo(event){
+function escanearArchivo(event){
 
     const file =
-        event.target.files[0];
+    event.target.files[0];
 
     if(!file) return;
 
-    try{
+    const reader =
+    new FileReader();
 
-        const html5QrCode =
-            new Html5Qrcode("qrcode");
+    reader.onload = function(e){
 
-        const resultado =
-            await html5QrCode.scanFile(file,true);
+        const img =
+        new Image();
 
-        procesarQREscaneado(resultado);
+        img.onload = function(){
 
-    }catch(error){
+            const canvas =
+            document.createElement('canvas');
 
-        console.error(error);
+            const ctx =
+            canvas.getContext('2d');
 
-        alert("❌ No se pudo leer el QR");
+            canvas.width =
+            img.width;
 
-    }
+            canvas.height =
+            img.height;
+
+            ctx.drawImage(img, 0, 0);
+
+            const imageData =
+            ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            const code =
+            jsQR(
+                imageData.data,
+                imageData.width,
+                imageData.height
+            );
+
+            if(!code){
+
+                alert("❌ No se pudo leer el QR");
+
+                return;
+            }
+
+            procesarQREscaneado(code.data);
+        };
+
+        img.src =
+        e.target.result;
+    };
+
+    reader.readAsDataURL(file);
 
     event.target.value = '';
-
 }
 
 function procesarQREscaneado(texto){
@@ -597,64 +557,45 @@ function procesarQREscaneado(texto){
     try{
 
         const url =
-            new URL(texto);
+        new URL(texto);
 
         const params =
-            new URLSearchParams(url.search);
+        new URLSearchParams(url.search);
 
         const datos =
-            params.get('d');
+        params.get('d');
 
         if(!datos){
 
             alert("QR inválido");
 
             return;
-
         }
-
-        const compressedData =
-            atob(datos);
-
-        const uint8Array =
-            Uint8Array.from(
-                compressedData,
-                c => c.charCodeAt(0)
-            );
 
         const json =
-            pako.inflate(
-                uint8Array,
-                { to:'string' }
-            );
+        pako.inflate(
+            Uint8Array.from(
+                atob(decodeURIComponent(datos)),
+                c => c.charCodeAt(0)
+            ),
+            { to: 'string' }
+        );
 
-        const importado =
-            JSON.parse(json);
+        registros =
+        JSON.parse(json);
 
-        if(Array.isArray(importado)){
+        calcularYRenderizarKardex();
 
-            registros =
-                importado;
+        cambiarPantalla('pantalla-vista');
 
-            idRegistro =
-                Math.max(...registros.map(r => r.id || 0)) + 1;
-
-            calcularYRenderizarKardex();
-
-            cambiarPantalla('pantalla-vista');
-
-            alert("✅ QR cargado correctamente");
-
-        }
+        alert("✅ QR cargado correctamente");
 
     }catch(e){
 
         console.error(e);
 
         alert("❌ Error leyendo QR");
-
     }
-
 }
 
 async function descargarExcel(){
@@ -664,14 +605,13 @@ async function descargarExcel(){
         alert("No hay datos");
 
         return;
-
     }
 
     const workbook =
-        new ExcelJS.Workbook();
+    new ExcelJS.Workbook();
 
     const worksheet =
-        workbook.addWorksheet('Kardex');
+    workbook.addWorksheet('Inventario');
 
     worksheet.addRow([
         'Fecha',
@@ -687,19 +627,19 @@ async function descargarExcel(){
         'Saldo'
     ]);
 
-    registros.forEach(reg=>{
+    registros.forEach(reg => {
 
         const existencia =
-            reg.entrada - reg.salida;
+        reg.entrada - reg.salida;
 
         const debe =
-            reg.entrada * reg.unitario;
+        reg.entrada * reg.unitario;
 
         const haber =
-            reg.salida * reg.unitario;
+        reg.salida * reg.unitario;
 
         const saldo =
-            debe - haber;
+        debe - haber;
 
         worksheet.addRow([
 
@@ -716,92 +656,80 @@ async function descargarExcel(){
             saldo
 
         ]);
-
     });
 
     const buffer =
-        await workbook.xlsx.writeBuffer();
+    await workbook.xlsx.writeBuffer();
 
     saveAs(
         new Blob([buffer]),
         'inventario.xlsx'
     );
-
 }
 
 async function cargarExcel(event){
 
     const archivo =
-        event.target.files[0];
+    event.target.files[0];
 
     if(!archivo) return;
 
     const reader =
-        new FileReader();
+    new FileReader();
 
-    reader.onload =
-        async function(e){
+    reader.onload = async function(e){
 
-        try{
+        const workbook =
+        new ExcelJS.Workbook();
 
-            const workbook =
-                new ExcelJS.Workbook();
+        await workbook.xlsx.load(
+            e.target.result
+        );
 
-            await workbook.xlsx.load(
-                e.target.result
-            );
+        const worksheet =
+        workbook.worksheets[0];
 
-            const worksheet =
-                workbook.worksheets[0];
+        registros = [];
 
-            registros = [];
+        worksheet.eachRow((row, rowNumber) => {
 
-            idRegistro = 1;
+            if(rowNumber === 1) return;
 
-            worksheet.eachRow((row,index)=>{
+            registros.push({
 
-                if(index === 1) return;
+                id: idRegistro++,
 
-                registros.push({
+                fecha:
+                row.getCell(1).value || "",
 
-                    id:idRegistro++,
+                concepto:
+                row.getCell(2).value || "",
 
-                    fecha:row.getCell(1).value,
+                codigo:
+                row.getCell(3).value || "",
 
-                    concepto:row.getCell(2).value,
+                producto:
+                row.getCell(4).value || "",
 
-                    codigo:row.getCell(3).value,
+                entrada:
+                parseFloat(row.getCell(5).value) || 0,
 
-                    producto:row.getCell(4).value,
+                salida:
+                parseFloat(row.getCell(6).value) || 0,
 
-                    entrada:Number(row.getCell(5).value)||0,
-
-                    salida:Number(row.getCell(6).value)||0,
-
-                    unitario:Number(row.getCell(8).value)||0
-
-                });
-
+                unitario:
+                parseFloat(row.getCell(8).value) || 0
             });
+        });
 
-            calcularYRenderizarKardex();
+        calcularYRenderizarKardex();
 
-            cambiarPantalla('pantalla-vista');
+        cambiarPantalla('pantalla-vista');
 
-            alert("✅ Excel cargado");
-
-        }catch(error){
-
-            console.error(error);
-
-            alert("Error cargando Excel");
-
-        }
-
+        alert("✅ Excel cargado");
     };
 
     reader.readAsArrayBuffer(archivo);
-
 }
 
 </script>
