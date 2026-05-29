@@ -3,385 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Kardex - Costos Promedio</title>
+    <title>Inventario General - Contaduría</title>
     <link rel="stylesheet" href="index.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        
-        <div id="pantalla-menu" class="pantalla activa">
-            <div class="header-title">
-                <h2>Sistema Kardex Financiero</h2>
-                <h3>Método de Valuación: Costos Promedio</h3>
-            </div>
-            
-            <div class="menu-grid">
-                <div class="card-btn" onclick="cambiarPantalla('pantalla-formulario')">
-                    <div class="card-icon">📝</div>
-                    <div class="card-title">Rellenar Inventario</div>
-                </div>
-                <div class="card-btn" onclick="irAVista()">
-                    <div class="card-icon">📊</div>
-                    <div class="card-title">Vista de Tabla</div>
-                </div>
-                <div class="card-btn" onclick="descargarExcel()">
-                    <div class="card-icon">📥</div>
-                    <div class="card-title">Descargar Excel</div>
-                </div>
-                <div class="card-btn" onclick="document.getElementById('inputExcel').click()">
-                    <div class="card-icon">📂</div>
-                    <div class="card-title">Cargar Excel</div>
-                </div>
-                <input type="file" id="inputExcel" accept=".xlsx" style="display:none" onchange="cargarExcel(event)">
-            </div>
+
+<div class="container">
+
+    <div id="pantalla-menu" class="pantalla activa">
+        <div class="header-title">
+            <h2>Sistema de Inventario General</h2>
+            <h3>Control Multiproducto</h3>
         </div>
 
-        <div id="pantalla-formulario" class="pantalla">
-            <div class="header-title" style="margin-bottom: 20px;">
-                <h2>Registrar Movimiento</h2>
-            </div>
-            
-            <div class="form-container">
-                <form id="formKardex" onsubmit="guardarRegistro(event)">
-                    <div class="form-group">
-                        <label>Fecha:</label>
-                        <input type="text" id="inFecha" placeholder="Ej. 01-May" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Concepto:</label>
-                        <input type="text" id="inConcepto" placeholder="Ej. Inventario Inicial, Compra, Consumo..." required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Tipo de Movimiento:</label>
-                        <select id="inTipo" onchange="toggleCostoUnitario()" required>
-                            <option value="entrada">Entrada (Compra / Inv. Inicial)</option>
-                            <option value="salida">Salida (Consumo / Venta)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Cantidad (Unidades):</label>
-                        <input type="number" id="inCantidad" step="1" min="1" required>
-                    </div>
-                    
-                    <div class="form-group" id="grupoUnitario">
-                        <label>Costo Unitario ($):</label>
-                        <input type="number" id="inUnitario" step="0.01" min="0">
-                        <small style="color:var(--text-muted); font-size:12px; display:block; margin-top:4px;">
-                            *En las Salidas, el costo se calcula en automático.
-                        </small>
-                    </div>
-
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">Volver al Menú</button>
-                        <button type="submit" class="btn btn-primary">Guardar Registro</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div id="pantalla-vista" class="pantalla">
-            <div class="btn-group" style="margin-bottom: 20px;">
-                <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver al Menú</button>
-                <button class="btn btn-primary" onclick="descargarExcel()">📥 Descargar Excel</button>
+        <div class="menu-grid">
+            <div class="card-btn" onclick="cambiarPantalla('pantalla-formulario')">
+                <div class="card-icon">📝</div>
+                <div class="card-title">Registrar Producto</div>
             </div>
 
-            <div class="header-title" id="encabezadoImprimir">
-                <div class="red-tab"></div>
-                <h2>Costos promedio</h2>
-                <h3>Auxiliar de Almacén de Materias Primas</h3>
+            <div class="card-btn" onclick="irAVista()">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Ver Tabla</div>
             </div>
 
-            <div class="meta-info">
-                <div>
-                    <span><strong>Artículo:</strong> Producto X</span>
-                    <span><strong>Localización:</strong> Almacén General</span>
-                </div>
-                <div>
-                    <span><strong>Clave:</strong> <span id="textoClave"></span></span>
-                    <span><strong>Unidad:</strong> Pieza</span>
-                </div>
-                <div class="barcode-container">
-                    <svg id="barcode"></svg>
-                </div>
+            <div class="card-btn" onclick="descargarExcel()">
+                <div class="card-icon">📥</div>
+                <div class="card-title">Descargar Excel</div>
             </div>
 
-            <div id="areaTablaExcell" style="overflow-x: auto;">
-                <table id="kardexTable">
-                    <thead>
-                        <tr>
-                            <th rowspan="2" style="width: 9%;">Fecha</th>
-                            <th rowspan="2" style="width: 17%;">Concepto</th>
-                            <th colspan="3">Unidades</th>
-                            <th colspan="2">Costo</th>
-                            <th colspan="3">Valores</th>
-                            <th rowspan="2" style="width: 5%;">Acción</th>
-                        </tr>
-                        <tr>
-                            <th style="width: 7%;">Entrada</th>
-                            <th style="width: 7%;">Salida</th>
-                            <th style="width: 8%;">Existencia</th>
-                            <th style="width: 8%;">Unitario</th>
-                            <th style="width: 8%;">Promedio</th>
-                            <th style="width: 10%;">Debe</th>
-                            <th style="width: 10%;">Haber</th>
-                            <th style="width: 10%;">Saldo</th>
-                        </tr>
-                    </thead>
-                    <tbody id="kardexBody">
-                    </tbody>
-                </table>
+            <div class="card-btn" onclick="document.getElementById('inputExcel').click()">
+                <div class="card-icon">📂</div>
+                <div class="card-title">Cargar Excel</div>
             </div>
-            
-            <div id="inventarioFinal"></div>
+
+            <input type="file" id="inputExcel" accept=".xlsx" style="display:none" onchange="cargarExcel(event)">
         </div>
     </div>
 
-    <script>
-        let registros = [];
-        let claveActual = "";
+    <div id="pantalla-formulario" class="pantalla">
+        <div class="header-title">
+            <h2>Registrar Movimiento de Producto</h2>
+        </div>
 
-        function cambiarPantalla(idPantalla) {
-            document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
-            document.getElementById(idPantalla).classList.add('activa');
+        <div class="form-container">
+            <form id="formKardex" onsubmit="guardarRegistro(event)">
+                <div class="form-group">
+                    <label>Fecha:</label>
+                    <input type="date" id="inFecha" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Concepto (Ubicación):</label>
+                    <input type="text" id="inConcepto" placeholder="Ej. Cubiculo num# 15" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Código:</label>
+                    <input type="text" id="inCodigo" placeholder="Ej. SD SU630 240 GB SATA I" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Producto:</label>
+                    <input type="text" id="inProducto" placeholder="Ej. SSD SU630 240 GB SATA III" required>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Entrada (Unidades):</label>
+                        <input type="number" id="inEntrada" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group" style="flex: 1;">
+                        <label>Salida (Unidades):</label>
+                        <input type="number" id="inSalida" min="0" value="0" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Costo Unitario ($):</label>
+                    <input type="number" id="inUnitario" step="0.01" min="0" required>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">Volver</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="pantalla-vista" class="pantalla">
+        <div class="btn-group" style="margin-bottom:20px;">
+            <button class="btn btn-secondary" onclick="cambiarPantalla('pantalla-menu')">⬅ Volver</button>
+            <button class="btn btn-primary" onclick="descargarExcel()">📥 Descargar Excel</button>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table id="kardexTable">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Fecha</th>
+                        <th rowspan="2">Concepto</th>
+                        <th rowspan="2">Código</th>
+                        <th rowspan="2">Producto</th>
+                        <th colspan="3">Unidades</th>
+                        <th colspan="2">Costo</th>
+                        <th colspan="3">Valores</th>
+                        <th rowspan="2">Acción</th>
+                    </tr>
+                    <tr>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Existencia</th>
+                        <th>Unitario</th>
+                        <th>Promedio</th>
+                        <th>Debe</th>
+                        <th>Haber</th>
+                        <th>Saldo</th>
+                    </tr>
+                </thead>
+                <tbody id="kardexBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let registros = [];
+    let idRegistro = 1;
+
+    function formatearFechaEspanol(fechaRaw) {
+        if (!fechaRaw) return "";
+        const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        
+        if (typeof fechaRaw === 'string' && fechaRaw.includes('-')) {
+            const partes = fechaRaw.split('-');
+            if (partes.length === 3 && partes[0].length === 4) {
+                const anio = partes[0];
+                const mes = meses[parseInt(partes[1], 10) - 1];
+                const dia = partes[2].padStart(2, '0');
+                return `${dia}-${mes}-${anio}`;
+            }
         }
+        
+        if (fechaRaw instanceof Date) {
+            const anio = fechaRaw.getUTCFullYear();
+            const mes = meses[fechaRaw.getUTCMonth()];
+            const dia = String(fechaRaw.getUTCDate()).padStart(2, '0');
+            return `${dia}-${mes}-${anio}`;
+        }
+        
+        return fechaRaw.toString();
+    }
 
-        function irAVista() {
+    function cambiarPantalla(idPantalla) {
+        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+        document.getElementById(idPantalla).classList.add('activa');
+    }
+
+    function irAVista() {
+        calcularYRenderizarKardex();
+        cambiarPantalla('pantalla-vista');
+    }
+
+    function guardarRegistro(e) {
+        e.preventDefault();
+        
+        const nuevoRegistro = {
+            id: idRegistro++,
+            fecha: formatearFechaEspanol(document.getElementById('inFecha').value),
+            concepto: document.getElementById('inConcepto').value,
+            codigo: document.getElementById('inCodigo').value,
+            producto: document.getElementById('inProducto').value,
+            entrada: parseFloat(document.getElementById('inEntrada').value) || 0,
+            salida: parseFloat(document.getElementById('inSalida').value) || 0,
+            unitario: parseFloat(document.getElementById('inUnitario').value) || 0
+        };
+
+        registros.push(nuevoRegistro);
+        document.getElementById('formKardex').reset();
+        document.getElementById('inEntrada').value = 0;
+        document.getElementById('inSalida').value = 0;
+        alert("Movimiento guardado correctamente");
+    }
+
+    function eliminarRegistro(index) {
+        if (confirm("¿Eliminar este registro?")) {
+            registros.splice(index, 1);
             calcularYRenderizarKardex();
-            cambiarPantalla('pantalla-vista');
+        }
+    }
+
+    function formatMoney(num) {
+        return (num || num === 0) ? Number(num).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+    }
+
+    function calcularYRenderizarKardex() {
+        const tbody = document.getElementById('kardexBody');
+        tbody.innerHTML = '';
+        
+        registros.forEach((reg, index) => {
+            let existencia = reg.entrada - reg.salida;
+            let debe = reg.entrada * reg.unitario;
+            let haber = reg.salida * reg.unitario;
+            let saldo = debe - haber;
+            let promedio = existencia > 0 ? (saldo / existencia) : reg.unitario;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="white-space: nowrap;">${reg.fecha}</td>
+                <td style="text-align: left;">${reg.concepto}</td>
+                <td style="text-align: left;">${reg.codigo}</td>
+                <td style="text-align: left;">${reg.producto}</td>
+                <td>${reg.entrada}</td>
+                <td>${reg.salida}</td>
+                <td><strong>${existencia}</strong></td>
+                <td>${formatMoney(reg.unitario)}</td>
+                <td>${formatMoney(promedio)}</td>
+                <td>${formatMoney(debe)}</td>
+                <td>${formatMoney(haber)}</td>
+                <td><strong>${formatMoney(saldo)}</strong></td>
+                <td>
+                    <button class="btn-delete" onclick="eliminarRegistro(${index})">🗑️</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function descargarExcel() {
+        if (registros.length === 0) {
+            alert("No hay datos para exportar");
+            return;
         }
 
-        function toggleCostoUnitario() {
-            const tipo = document.getElementById('inTipo').value;
-            const campoUnitario = document.getElementById('inUnitario');
-            
-            if (tipo === 'salida') {
-                campoUnitario.value = '';
-                campoUnitario.disabled = true;
-                campoUnitario.required = false;
-            } else {
-                campoUnitario.disabled = false;
-                campoUnitario.required = true;
-            }
-        }
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Discos duros');
 
-        function guardarRegistro(e) {
-            e.preventDefault(); 
+        const rowEncabezado1 = worksheet.addRow(['', '', '', '', 'UNIDADES', '', '', 'COSTO', '', 'VALORES', '', '']);
+        worksheet.mergeCells('E1:G1'); 
+        worksheet.mergeCells('H1:I1'); 
+        worksheet.mergeCells('J1:L1'); 
 
-            const tipo = document.getElementById('inTipo').value;
-            const nuevoRegistro = {
-                fecha: document.getElementById('inFecha').value,
-                concepto: document.getElementById('inConcepto').value,
-                entrada: tipo === 'entrada' ? parseFloat(document.getElementById('inCantidad').value) : 0,
-                salida: tipo === 'salida' ? parseFloat(document.getElementById('inCantidad').value) : 0,
-                unitario: tipo === 'entrada' ? parseFloat(document.getElementById('inUnitario').value) : null
-            };
+        const rowEncabezado2 = worksheet.addRow(['FECHA', 'CONCEPTO', 'CODIGO', 'PRODUCTO', 'Entrada', 'Salida', 'Existencia', 'Unitario', 'Promedio', 'Debe', 'Haber', 'Saldo']);
+        worksheet.mergeCells('A1:A2'); 
+        worksheet.mergeCells('B1:B2'); 
+        worksheet.mergeCells('C1:C2'); 
+        worksheet.mergeCells('D1:D2'); 
 
-            registros.push(nuevoRegistro);
-            document.getElementById('formKardex').reset();
-            toggleCostoUnitario(); 
-        }
+        [rowEncabezado1, rowEncabezado2].forEach(row => {
+            row.eachCell(cell => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } }; 
+                cell.alignment = { horizontal: 'center', vertical: 'middle' };
+                cell.border = { top: {style:'thin', color: {argb:'FF00B050'}}, bottom: {style:'thin', color: {argb:'FF00B050'}} };
+            });
+        });
 
-        function eliminarRegistro(index) {
-            if(confirm("¿Estás seguro de que deseas eliminar este movimiento? Los saldos y promedios posteriores se recalcularán automáticamente.")) {
-                registros.splice(index, 1); 
-                calcularYRenderizarKardex(); 
-            }
-        }
+        registros.forEach(reg => {
+            let existencia = reg.entrada - reg.salida;
+            let debe = reg.entrada * reg.unitario;
+            let haber = reg.salida * reg.unitario;
+            let saldo = debe - haber;
+            let promedio = existencia > 0 ? (saldo / existencia) : reg.unitario;
 
-        const formatMoney = (num) => (num || num === 0) ? num.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
-        const formatUnits = (num) => (num || num === 0) ? num : "";
+            const row = worksheet.addRow([
+                reg.fecha, reg.concepto, reg.codigo, reg.producto,
+                reg.entrada, reg.salida, existencia, reg.unitario, promedio, debe, haber, saldo
+            ]);
 
-        function calcularYRenderizarKardex() {
-            const tbody = document.getElementById('kardexBody');
-            tbody.innerHTML = ''; 
-
-            let existencia = 0;
-            let saldo = 0;
-            let promedio = 0;
-
-            if(registros.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:20px;">No hay movimientos registrados. Ve a "Rellenar Inventario" para comenzar.</td></tr>';
-                document.getElementById('inventarioFinal').style.display = "none";
-                return;
-            }
-
-            registros.forEach((reg, index) => {
-                let debe = 0;
-                let haber = 0;
-
-                if (reg.entrada > 0) {
-                    existencia += reg.entrada;
-                    debe = reg.entrada * reg.unitario;
-                    saldo += debe;
-                    promedio = saldo / existencia; 
-                } else if (reg.salida > 0) {
-                    existencia -= reg.salida;
-                    haber = reg.salida * promedio; 
-                    saldo -= haber;
+            row.eachCell((cell, colNumber) => {
+                cell.border = {
+                    top: {style:'thin'}, left: {style:'thin'}, 
+                    bottom: {style:'thin'}, right: {style:'thin'}
+                };
+                if(colNumber >= 8) {
+                    cell.numFmt = '#,##0.00';
                 }
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="text-align:center;">${reg.fecha}</td>
-                    <td>${reg.concepto}</td>
-                    <td>${reg.entrada > 0 ? reg.entrada : ''}</td>
-                    <td>${reg.salida > 0 ? reg.salida : ''}</td>
-                    <td><strong>${formatUnits(existencia)}</strong></td>
-                    <td>${reg.unitario ? formatMoney(reg.unitario) : ''}</td>
-                    <td>${formatMoney(promedio)}</td>
-                    <td>${debe > 0 ? formatMoney(debe) : ''}</td>
-                    <td>${haber > 0 ? formatMoney(haber) : ''}</td>
-                    <td><strong>${formatMoney(saldo)}</strong></td>
-                    <td style="text-align:center;">
-                        <button class="btn-delete" onclick="eliminarRegistro(${index})" title="Eliminar fila">🗑️</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
             });
+        });
 
-            const resDiv = document.getElementById('inventarioFinal');
-            resDiv.style.display = "block";
-            resDiv.innerHTML = `<strong>El inventario final queda valuado de la siguiente manera:</strong><br>
-                                ${existencia} unidades a $${promedio.toFixed(2)} por unidad = $${saldo.toFixed(2)} pesos`;
-        }
+        worksheet.columns.forEach((col, i) => {
+            if (i === 1 || i === 2 || i === 3) col.width = 25; 
+            else if (i === 0) col.width = 12; 
+            else col.width = 10; 
+        });
 
-        async function descargarExcel() {
-            calcularYRenderizarKardex();
-            
-            if(registros.length === 0) {
-                alert("No hay datos para exportar. Registra movimientos primero.");
-                return;
-            }
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, 'CONTADURIA.xlsx');
+    }
 
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet('Kardex Promedio');
+    async function cargarExcel(event) {
+        const archivo = event.target.files[0];
+        if (!archivo) return;
 
-            worksheet.mergeCells('A1:J1');
-            const titulo = worksheet.getCell('A1');
-            titulo.value = 'Costos promedio - Auxiliar de Almacén de Materias Primas';
-            titulo.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-            titulo.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F618D' } };
-            titulo.alignment = { horizontal: 'center', vertical: 'middle' };
-
-            worksheet.addRow([]); 
-            
-            worksheet.mergeCells('A3:J3');
-            const subtitulo = worksheet.getCell('A3');
-            subtitulo.value = `Artículo: Producto X | Clave: ${claveActual} | Unidad: Pieza`;
-            subtitulo.font = { bold: true };
-            subtitulo.alignment = { horizontal: 'left' };
-            worksheet.addRow([]);
-
-            const rowEncabezado1 = worksheet.addRow(['Fecha', 'Concepto', 'Unidades', '', '', 'Costo', '', 'Valores', '', '']);
-            worksheet.mergeCells('C5:E5'); 
-            worksheet.mergeCells('F5:G5'); 
-            worksheet.mergeCells('H5:J5'); 
-
-            const rowEncabezado2 = worksheet.addRow(['', '', 'Entrada', 'Salida', 'Existencia', 'Unitario', 'Promedio', 'Debe', 'Haber', 'Saldo']);
-            worksheet.mergeCells('A5:A6'); 
-            worksheet.mergeCells('B5:B6'); 
-
-            [rowEncabezado1, rowEncabezado2].forEach(row => {
-                row.eachCell(cell => {
-                    cell.font = { bold: true, color: { argb: 'FF154360' } };
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF85C1E9' } }; 
-                    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-                    cell.border = {
-                        top: {style:'thin'}, left: {style:'thin'}, 
-                        bottom: {style:'thin'}, right: {style:'thin'}
-                    };
-                });
-            });
-
-            let existencia = 0, saldo = 0, promedio = 0;
-            
-            registros.forEach(reg => {
-                let debe = 0, haber = 0;
-                
-                if (reg.entrada > 0) {
-                    existencia += reg.entrada;
-                    debe = reg.entrada * reg.unitario;
-                    saldo += debe;
-                    promedio = saldo / existencia;
-                } else if (reg.salida > 0) {
-                    existencia -= reg.salida;
-                    haber = reg.salida * promedio;
-                    saldo -= haber;
-                }
-
-                const row = worksheet.addRow([
-                    reg.fecha,
-                    reg.concepto,
-                    reg.entrada > 0 ? reg.entrada : '',
-                    reg.salida > 0 ? reg.salida : '',
-                    existencia,
-                    reg.unitario || '',
-                    promedio,
-                    debe > 0 ? debe : '',
-                    haber > 0 ? haber : '',
-                    saldo
-                ]);
-
-                row.eachCell((cell, colNumber) => {
-                    cell.border = {
-                        top: {style:'thin'}, left: {style:'thin'}, 
-                        bottom: {style:'thin'}, right: {style:'thin'}
-                    };
-                    if(colNumber > 2) cell.alignment = { horizontal: 'right' };
-                });
-
-                ['F', 'G', 'H', 'I', 'J'].forEach(col => {
-                    row.getCell(col).numFmt = '"$"#,##0.00';
-                });
-            });
-
-            worksheet.columns.forEach((col, i) => {
-                if (i === 1) col.width = 25; 
-                else if (i === 0) col.width = 12; 
-                else col.width = 13; 
-            });
-
-            const buffer = await workbook.xlsx.writeBuffer();
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            saveAs(blob, 'Kardex_Costos_Promedio.xlsx');
-        }
-
-        async function cargarExcel(event) {
-            const archivo = event.target.files[0];
-            if (!archivo) return;
-
-            const reader = new FileReader();
-            
-            reader.onload = async function(e) {
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
                 const data = e.target.result;
                 const workbook = new ExcelJS.Workbook();
                 await workbook.xlsx.load(data);
-                const worksheet = workbook.getWorksheet(1);
+                
+                const worksheet = workbook.worksheets[0]; 
                 
                 registros = [];
+                idRegistro = 1;
 
                 worksheet.eachRow((row, rowNumber) => {
-                    if (rowNumber < 7) return;
+                    if (rowNumber <= 2) return;
                     
-                    const valores = row.values;
-                    if (!valores[1]) return; 
+                    let valFecha = row.getCell(1).value;
+                    let fechaFinal = "";
 
-                    let entradaVal = parseFloat(valores[3]);
-                    let salidaVal = parseFloat(valores[4]);
-                    let unitarioVal = parseFloat(valores[6]);
+                    if (valFecha && valFecha.result !== undefined) {
+                        valFecha = valFecha.result;
+                    }
+
+                    if (valFecha instanceof Date) {
+                        fechaFinal = formatearFechaEspanol(valFecha);
+                    } else {
+                        fechaFinal = formatearFechaEspanol(row.getCell(1).text || "");
+                    }
+
+                    const productoTxt = row.getCell(4).text || "";
+
+                    if (fechaFinal.trim() === "" && productoTxt.trim() === "") return;
+
+                    let valEntrada = row.getCell(5).value;
+                    if(valEntrada && valEntrada.result !== undefined) valEntrada = valEntrada.result;
+
+                    let valSalida = row.getCell(6).value;
+                    if(valSalida && valSalida.result !== undefined) valSalida = valSalida.result;
+
+                    let valUnitario = row.getCell(8).value;
+                    if(valUnitario && valUnitario.result !== undefined) valUnitario = valUnitario.result;
 
                     const registro = {
-                        fecha: valores[1] ? valores[1].toString() : "",
-                        concepto: valores[2] ? valores[2].toString() : "",
-                        entrada: isNaN(entradaVal) ? 0 : entradaVal,
-                        salida: isNaN(salidaVal) ? 0 : salidaVal,
-                        unitario: isNaN(unitarioVal) ? null : unitarioVal
+                        id: idRegistro++,
+                        fecha: fechaFinal,
+                        concepto: row.getCell(2).text || "",
+                        codigo: row.getCell(3).text || "",
+                        producto: productoTxt,
+                        entrada: parseFloat(valEntrada) || 0,
+                        salida: parseFloat(valSalida) || 0,
+                        unitario: parseFloat(valUnitario) || 0
                     };
 
                     registros.push(registro);
@@ -389,33 +361,18 @@
 
                 calcularYRenderizarKardex();
                 cambiarPantalla('pantalla-vista');
-                alert("Excel cargado correctamente");
-                event.target.value = ''; 
-            };
+                
+                alert("Excel cargado correctamente (" + registros.length + " movimientos recuperados).");
 
-            reader.readAsArrayBuffer(archivo);
-        }
-
-        function generarCodigoBarras() {
-            claveActual = Math.floor(100000 + Math.random() * 900000).toString();
-            document.getElementById('textoClave').innerText = claveActual;
-
-            JsBarcode("#barcode", claveActual, {
-                format: "CODE128",
-                lineColor: "#000000",
-                width: 2,
-                height: 40,
-                displayValue: true,
-                fontSize: 14,
-                margin: 0,
-                background: "transparent"
-            });
-        }
-
-        window.onload = () => {
-            toggleCostoUnitario();
-            generarCodigoBarras();
+            } catch (error) {
+                alert("Hubo un problema al intentar leer el documento. Asegúrate de que no esté corrupto y tenga la estructura de las columnas correcta.");
+            }
+            
+            event.target.value = ''; 
         };
-    </script>
+
+        reader.readAsArrayBuffer(archivo);
+    }
+</script>
 </body>
 </html>
