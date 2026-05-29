@@ -8,9 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 
@@ -35,10 +35,11 @@
                 <div class="card-icon">📲</div>
                 <div class="card-title">Descargar QR</div>
             </div>
-            <div class="card-btn" onclick="document.getElementById('inputQRImagen').click()">
-                <div class="card-icon">🔍</div>
-                <div class="card-title">Cargar por QR</div>
-            </div>
+           <div class="card-btn" onclick="document.getElementById('inputQRImagen').click()">
+    <div class="card-icon">🔍</div>
+    <div class="card-title">Cargar por QR</div>
+</div>
+
             <div class="card-btn" onclick="descargarExcel()">
                 <div class="card-icon">📥</div>
                 <div class="card-title">Descargar Excel</div>
@@ -48,7 +49,7 @@
                 <div class="card-title">Cargar Excel</div>
             </div>
             <input type="file" id="inputExcel" accept=".xlsx" style="display:none" onchange="cargarExcel(event)">
-            <input type="file" id="inputQRImagen" accept="image/*" style="display:none" onchange="escanearArchivo(event)">
+             <input type="file" id="inputQRImagen" accept="image/*" style="display:none" onchange="leerQRImagen(event)">
         </div>
     </div>
 
@@ -146,11 +147,27 @@
         </div>
     </div>
 
+    <!-- PANTALLA SCANNER -->
+    <div id="pantalla-scanner" class="pantalla">
+        <div class="header-title">
+            <h2>Escanear Código QR</h2>
+        </div>
+        <div style="text-align:center; padding:20px;">
+            <p style="color:#aaa; margin-bottom:20px;">Apunta la cámara al código QR del inventario</p>
+            <div id="scanner-container" style="max-width:400px; margin:0 auto; border-radius:12px; overflow:hidden;"></div>
+            <br>
+            <p id="scanner-status" style="color:#aaa; font-size:13px;">Iniciando cámara...</p>
+            <br>
+            <button class="btn btn-secondary" onclick="detenerScanner()">⬅ Volver</button>
+        </div>
+    </div>
+
 </div>
 
 <script>
     let registros  = [];
     let idRegistro = 1;
+    let scannerActivo = null;
 
     const BASE_URL = "https://kike235038n.github.io/conta.github.io/";
 
@@ -168,6 +185,7 @@
                     calcularYRenderizarKardex();
                     cambiarPantalla('pantalla-vista');
                     alert(`✅ Datos cargados desde QR: ${registros.length} movimientos.`);
+                    // Limpiar URL para no recargar al refrescar
                     window.history.replaceState({}, '', window.location.pathname);
                 }
             } catch(e) {
@@ -176,7 +194,7 @@
         }
     });
 
-    // ── Generar URL con datos comprimidos ──
+    // ── Comprimir datos y generar URL con QR ──
     function generarURLConDatos() {
         const json       = JSON.stringify(registros);
         const compressed = pako.deflate(json);
@@ -184,98 +202,100 @@
         return BASE_URL + "?d=" + encodeURIComponent(b64);
     }
 
-    // ── Mostrar QR con qrcode.js (genera canvas, compatible con jsQR) ──
     function mostrarQR() {
         if (registros.length === 0) {
             alert("No hay datos en la tabla para generar el QR.");
             return;
         }
+
         const url = generarURLConDatos();
+        console.log("URL generada:", url.length, "caracteres");
+
         if (url.length > 2953) {
-            alert(`⚠️ Demasiados datos para un QR (${registros.length} registros, ${url.length} caracteres).\nIntenta con menos registros.`);
+            alert(`⚠️ Hay demasiados datos para un QR (${registros.length} registros, ${url.length} caracteres).\nEl QR soporta hasta ~2900 caracteres. Intenta con menos registros.`);
             return;
         }
+
         cambiarPantalla('pantalla-qr');
 
-        const contenedor = document.getElementById('qrcode');
-        contenedor.innerHTML = '';
+        // Limpiar QR anterior
+        document.getElementById('qrcode').innerHTML = '';
 
-        const canvas = document.createElement('canvas');
-        contenedor.appendChild(canvas);
-
-        QRCode.toCanvas(canvas, url, {
-            width: 256,
-            margin: 2,
-            color: { dark: '#000000', light: '#ffffff' }
-        }, function(error) {
-            if (error) {
-                contenedor.innerHTML = '<p style="color:red">Error generando QR</p>';
-                console.error(error);
-            }
+        new QRCode(document.getElementById('qrcode'), {
+            text:          url,
+            width:         256,
+            height:        256,
+            colorDark:     "#000000",
+            colorLight:    "#ffffff",
+            correctLevel:  QRCode.CorrectLevel.M
         });
 
         document.getElementById('qr-info').textContent =
-            `${registros.length} registros · ${url.length} caracteres`;
+            `${registros.length} registros · ${url.length} caracteres · Escanea con tu celular`;
     }
 
-    // ── Descargar QR como PNG ──
     function descargarQRImagen() {
         const canvas = document.querySelector('#qrcode canvas');
+        const img    = document.querySelector('#qrcode img');
         if (canvas) {
-            const link = document.createElement('a');
+            const link  = document.createElement('a');
             link.download = 'inventario-qr.png';
-            link.href = canvas.toDataURL('image/png');
+            link.href     = canvas.toDataURL();
+            link.click();
+        } else if (img) {
+            const link  = document.createElement('a');
+            link.download = 'inventario-qr.png';
+            link.href     = img.src;
             link.click();
         } else {
-            alert("Espera a que el QR termine de generarse.");
+            alert("Espera un momento a que el QR termine de generarse.");
         }
     }
 
-    // ── Leer QR desde imagen con jsQR ──
-    function escanearArchivo(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        event.target.value = '';
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx    = canvas.getContext('2d');
-                let encontrado = false;
-
-                const escalas = [1, 2, 3, 0.5, 1.5];
-
-                for (const escala of escalas) {
-                    canvas.width  = img.width  * escala;
-                    canvas.height = img.height * escala;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-
-                    if (code && code.data) {
-                        encontrado = true;
-                        procesarQREscaneado(code.data);
-                        break;
-                    }
-                }
-
-                if (!encontrado) {
-                    alert("❌ No se pudo leer el QR.\n\nConsejos:\n• Usa la imagen PNG descargada con 'Guardar QR'\n• Asegúrate que el QR no esté cortado\n• Evita sombras o brillo excesivo");
-                }
-            };
-            img.onerror = () => alert("❌ No se pudo cargar la imagen.");
-            img.src = e.target.result;
+    // ── Scanner de QR con cámara ──
+    function iniciarScanner() {
+        const config = {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
         };
-        reader.readAsDataURL(file);
+
+        scannerActivo = new Html5Qrcode("scanner-container");
+        document.getElementById('scanner-status').textContent = "Cámara activa. Apunta al QR...";
+
+        scannerActivo.start(
+            { facingMode: "environment" },
+            config,
+            (decodedText) => {
+                // QR leído exitosamente
+                procesarQREscaneado(decodedText);
+            },
+            (errorMsg) => { /* ignorar errores de frame */ }
+        ).catch(err => {
+            document.getElementById('scanner-status').textContent =
+                "Error al acceder a la cámara. Verifica los permisos.";
+            console.error("Scanner error:", err);
+        });
     }
 
-    // ── Procesar texto del QR ──
+    function detenerScanner() {
+        if (scannerActivo) {
+            scannerActivo.stop().then(() => {
+                scannerActivo = null;
+                document.getElementById('scanner-container').innerHTML = '';
+                cambiarPantalla('pantalla-menu');
+            }).catch(() => {
+                scannerActivo = null;
+                document.getElementById('scanner-container').innerHTML = '';
+                cambiarPantalla('pantalla-menu');
+            });
+        } else {
+            cambiarPantalla('pantalla-menu');
+        }
+    }
+
     function procesarQREscaneado(texto) {
+        detenerScanner();
         try {
             const url    = new URL(texto);
             const params = new URLSearchParams(url.search);
@@ -303,22 +323,56 @@
             }
         } catch(e) {
             console.error("Error procesando QR:", e);
-            alert("❌ No se pudo leer el QR. Asegúrate de que sea un QR generado por este sistema.");
+            alert("❌ No se pudo leer el QR. Asegúrate de que sea un QR de este sistema.");
+        }
+    }
+    async function leerQRImagen(event) {
+
+    const archivo = event.target.files[0];
+
+    if (!archivo) return;
+
+    try {
+
+        const html5QrCode = new Html5Qrcode("scanner-container");
+
+        const resultado = await html5QrCode.scanFile(archivo, true);
+
+        procesarQREscaneado(resultado);
+
+    } catch (error) {
+
+        console.error(error);
+        alert("❌ No se pudo leer el código QR de la imagen.");
+
+    }
+
+    event.target.value = '';
+}
+
+    // ── Activar scanner al entrar a esa pantalla ──
+    function cambiarPantalla(id) {
+        // Detener scanner si salimos de esa pantalla
+        if (id !== 'pantalla-scanner' && scannerActivo) {
+            scannerActivo.stop().catch(() => {});
+            scannerActivo = null;
+            document.getElementById('scanner-container').innerHTML = '';
+        }
+        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+        document.getElementById(id).classList.add('activa');
+
+        if (id === 'pantalla-scanner') {
+            setTimeout(iniciarScanner, 300);
         }
     }
 
-    // ── Cambiar pantalla ──
-    function cambiarPantalla(id) {
-        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
-        document.getElementById(id).classList.add('activa');
-    }
-
-    // ── Utilidades de fecha ──
+    // ── Utilidades ──
     function formatearFechaEspanol(fechaRaw) {
         if (!fechaRaw) return "";
         const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        if (fechaRaw instanceof Date)
+        if (fechaRaw instanceof Date) {
             return `${String(fechaRaw.getUTCDate()).padStart(2,'0')}-${meses[fechaRaw.getUTCMonth()]}-${fechaRaw.getUTCFullYear()}`;
+        }
         if (typeof fechaRaw === 'string' && fechaRaw.includes('-')) {
             const p = fechaRaw.split('-');
             if (p.length === 3 && p[0].length === 4)
@@ -327,7 +381,6 @@
         return fechaRaw.toString();
     }
 
-    // ── Utilidades Excel ──
     function getCellText(cell) {
         if (!cell) return "";
         try {
@@ -357,7 +410,6 @@
         catch(e) { return null; }
     }
 
-    // ── Navegación y formulario ──
     function irAVista() {
         calcularYRenderizarKardex();
         cambiarPantalla('pantalla-vista');
@@ -394,7 +446,6 @@
             : "";
     }
 
-    // ── Renderizar tabla kardex ──
     function calcularYRenderizarKardex() {
         const tbody = document.getElementById('kardexBody');
         tbody.innerHTML = '';
@@ -405,6 +456,7 @@
             const saldo      = debe - haber;
             const promedio   = (reg.entrada + reg.salida) > 0
                 ? (debe + haber) / (reg.entrada + reg.salida) : reg.unitario;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="white-space:nowrap">${reg.fecha}</td>
@@ -425,19 +477,20 @@
         });
     }
 
-    // ── Cargar Excel ──
     async function cargarExcel(event) {
         const archivo = event.target.files[0];
         if (!archivo) return;
         const reader = new FileReader();
         reader.onload = async function(e) {
             try {
-                const workbook   = new ExcelJS.Workbook();
+                const workbook  = new ExcelJS.Workbook();
                 await workbook.xlsx.load(e.target.result);
-                const worksheet  = workbook.worksheets[0];
+                const worksheet = workbook.worksheets[0];
                 const totalFilas = worksheet.rowCount;
+
                 registros  = [];
                 idRegistro = 1;
+
                 let colMap    = null;
                 let headerRow = 2;
                 let mapAcum   = {};
@@ -482,14 +535,17 @@
                         const celdaFecha = getSafeCell(worksheet, r, colMap.fecha);
                         let fv = celdaFecha ? celdaFecha.value : null;
                         if (fv && typeof fv === 'object' && 'result' in fv) fv = fv.result;
-                        const fechaFinal  = (fv instanceof Date)
+                        const fechaFinal = (fv instanceof Date)
                             ? formatearFechaEspanol(fv) : getCellText(celdaFecha);
+
                         const conceptoStr = getCellText(getSafeCell(worksheet, r, colMap.concepto));
                         const codigoStr   = getCellText(getSafeCell(worksheet, r, colMap.codigo));
                         const productoStr = getCellText(getSafeCell(worksheet, r, colMap.producto));
+
                         if (!fechaFinal && !conceptoStr && !productoStr) continue;
+
                         registros.push({
-                            id:       idRegistro++,
+                            id: idRegistro++,
                             fecha:    fechaFinal,
                             concepto: conceptoStr,
                             codigo:   codigoStr,
@@ -513,7 +569,6 @@
         reader.readAsArrayBuffer(archivo);
     }
 
-    // ── Descargar Excel ──
     async function descargarExcel() {
         if (registros.length === 0) { alert("No hay datos para descargar."); return; }
         const workbook  = new ExcelJS.Workbook();
@@ -524,15 +579,14 @@
             const debe       = reg.entrada * reg.unitario;
             const haber      = reg.salida  * reg.unitario;
             const saldo      = debe - haber;
-            const promedio   = (reg.entrada + reg.salida) > 0
-                ? (debe + haber) / (reg.entrada + reg.salida) : reg.unitario;
+            const promedio   = (reg.entrada + reg.salida) > 0 ? (debe + haber) / (reg.entrada + reg.salida) : reg.unitario;
             worksheet.addRow([reg.fecha, reg.concepto, reg.codigo, reg.producto,
                 reg.entrada, reg.salida, existencia, reg.unitario, promedio, debe, haber, saldo]);
         });
         const buffer = await workbook.xlsx.writeBuffer();
         saveAs(new Blob([buffer]), 'inventario.xlsx');
+    
     }
-
 </script>
 </body>
 </html>
